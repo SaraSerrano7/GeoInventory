@@ -1,0 +1,4 @@
+todo.txt
+.idea/*
+db.sqlite3
+GeoInventory/__pycache__/
