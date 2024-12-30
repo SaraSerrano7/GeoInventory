@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+import configparser
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +22,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%#zp)tjuj!wxt-#6&c1@r0vtf#fat0(8lpfevl*6r05w44g-6w'
+# KEY_FILE_PATH = os.path.join(BASE_DIR, '/GeoInventory/config/key.conf')
+# config = configparser.ConfigParser()
+# config.read(KEY_FILE_PATH)
+# SECRET_KEY = config.get('DEFAULT', 'key')
+# SECRET_KEY = open('GeoInventory/config/key.conf', 'r').read().split('=')[1][1:-1]
+
+# SECRET_KEY = ''
+with open('GeoInventory/config/key.conf', 'r') as key_file:
+    SECRET_KEY = key_file.read().split('=')[1][1:-1]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,6 +47,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'Files',
+    'Api',
 ]
 
 MIDDLEWARE = [
