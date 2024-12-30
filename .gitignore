@@ -2,3 +2,4 @@ todo.txt
 .idea/*
 db.sqlite3
 GeoInventory/__pycache__/
+GeoInventory/config
