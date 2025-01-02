@@ -5,3 +5,4 @@ GeoInventory/__pycache__/
 GeoInventory/config
 Api/migrations/
 Files/migrations/
+Management/migrations
