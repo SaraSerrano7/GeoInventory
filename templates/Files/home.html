@@ -5,6 +5,20 @@
     <title>GeoInventory</title>
 </head>
 <body>
-Hello world
+{#Hello world#}
+
+<nav>
+    {% if user.is_authenticated %}
+        <p>Hi, {{ user.username }}</p>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Log out</button>
+        </form>
+
+    {% else %}
+        <a href="{% url 'login' %}">Log in</a>
+    {% endif %}
+</nav>
+
 </body>
 </html>
