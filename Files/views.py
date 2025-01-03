@@ -5,11 +5,12 @@ Files' app views to develop file management functions
 # Create your views here.
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 
 
 # @login_required
-class HomePageView(TemplateView):
+def homepageView(request):
     """
     Main view where the user interacts with the Files app
     """
-    template_name = 'Files/home.html'
+    return render(request, 'Files/home.html')
