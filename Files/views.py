@@ -23,3 +23,8 @@ def homepageView(request):
     if not request.user.is_authenticated:
         return redirect('login')
     return render(request, 'Files/home.html', context)
+
+
+@login_required
+def uploadFilesView(request):
+    return render(request, 'upload_files/upload_files.html')
