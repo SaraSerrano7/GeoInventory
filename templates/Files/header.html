@@ -1,33 +1,4 @@
-{#<!DOCTYPE html>#}
-{#<html lang="en">#}
-{#<head>#}
-{#    <meta charset="UTF-8">#}
-{#    <title>GeoInventory</title>#}
-{#</head>#}
-{#<body>#}
-{##}
-{#<nav>#}
-{#    {% if user.is_authenticated %}#}
-{#        <p>Hi, {{ user.username }}</p>#}
-{#        <form method="post" action="{% url 'logout' %}">#}
-{#            {% csrf_token %}#}
-{#            <button type="submit">Log out</button>#}
-{#        </form>#}
-{##}
-{#    {% else %}#}
-{#        <a href="{% url 'login' %}">Log in</a>#}
-{#    {% endif %}#}
-{#</nav>#}
-{##}
-{#</body>#}
-{#</html>#}
-
-
-
-{#{% extends 'base.html' %}#}
 {% load static %}
-
-{#{% block content %}#}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,7 +10,7 @@
         .header {
             background-color: #f8f9fa;
             padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -76,7 +47,7 @@
             position: absolute;
             background-color: white;
             min-width: 160px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             z-index: 1;
         }
 
@@ -143,10 +114,9 @@
             background-color: #e9ecef;
         }
 
-         .main-container {
+        .main-container {
             display: flex;
-            {#margin-top: 64px; /* Height of header */#}
-            height: calc(100vh - 64px);
+        {#margin-top: 64px; /* Height of header */#} height: calc(100vh - 64px);
         }
 
         .file-explorer {
@@ -206,49 +176,48 @@
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="left-section">
-            <a href="{% url 'home' %}" class="home-icon">
-                <i class="fas fa-home"></i>
-            </a>
-            <div class="actions-dropdown">
-                <button class="actions-button">Actions</button>
-                <div class="dropdown-content">
-                    <a href="#"><i class="fas fa-upload"></i> Upload Files</a>
-                </div>
+<header class="header">
+    <div class="left-section">
+        <a href="{% url 'home' %}" class="home-icon">
+            <i class="fas fa-home"></i>
+        </a>
+        <div class="actions-dropdown">
+            <button class="actions-button">Actions</button>
+            <div class="dropdown-content">
+                <a href="#"><i class="fas fa-upload"></i> Upload Files</a>
             </div>
         </div>
-
-        <div class="search-section">
-            <div class="search-box">
-                <input type="text" class="search-input" placeholder="Search...">
-                <button class="search-button">
-                    <i class="fas fa-search"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="right-section">
-            <button>
-                <i class="fas fa-cog"></i>
-            </button>
-            <button>
-                <i class="fas fa-user"></i>
-            </button>
-            <form method="post" action="{% url 'logout' %}" class="logout-form">
-                {% csrf_token %}
-                <button type="submit">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </form>
-        </div>
-    </header>
-
-    <div class="content">
-    {% block main_content %}
-    {% endblock %}
     </div>
 
+    <div class="search-section">
+        <div class="search-box">
+            <input type="text" class="search-input" placeholder="Search...">
+            <button class="search-button">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="right-section">
+        <button>
+            <i class="fas fa-cog"></i>
+        </button>
+        <button>
+            <i class="fas fa-user"></i>
+        </button>
+        <form method="post" action="{% url 'logout' %}" class="logout-form">
+            {% csrf_token %}
+            <button type="submit">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </form>
+    </div>
+</header>
+
+<div class="content">
+    {% block main_content %}
+    {% endblock %}
+</div>
 
 
 </body>
