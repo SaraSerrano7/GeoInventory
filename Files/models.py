@@ -136,6 +136,10 @@ class File(DigitalResource):
     def __str__(self):
         return str(self.name)
 
+    @staticmethod
+    def count_existing():
+        return File.objects.count()
+
 
 class Access(DigitalResource):
     """
