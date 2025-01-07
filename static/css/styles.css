@@ -208,33 +208,12 @@
     border-radius: 4px;
 }
 
-/* Add these styles to your existing CSS */
-/*.location-controls {*/
-/*    display: flex;*/
-/*    gap: 0.5rem;*/
-/*    margin-bottom: 0.5rem;*/
-/*}*/
-
 .location-select {
     flex-grow: 1;
     padding: 0.5rem;
     border: 1px solid #e5e5e5;
     border-radius: 4px;
 }
-
-/*.location-display {*/
-/*    display: flex;*/
-/*    align-items: center;*/
-/*    gap: 0.5rem;*/
-/*    padding: 0.5rem;*/
-/*    background-color: #f8f9fa;*/
-/*    border-radius: 4px;*/
-/*    margin-top: 0.5rem;*/
-/*}*/
-
-/*.location-display i {*/
-/*    color: #ffd700;*/
-/*}*/
 
 .remove-file-btn {
     margin-left: auto;
@@ -268,14 +247,14 @@
     overflow-y: auto;
 }
 
-.folder-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    cursor: pointer;
-    border-radius: 4px;
-}
+/*.folder-item {*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*    gap: 0.5rem;*/
+/*    padding: 0.25rem 0.5rem;*/
+/*    cursor: pointer;*/
+/*    border-radius: 4px;*/
+/*}*/
 
 .folder-item:hover {
     background-color: #f8f9fa;
@@ -301,6 +280,45 @@
     margin: 0.5rem 0;
 }
 
+/*.location-display {*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*    gap: 0.5rem;*/
+/*    padding: 0.5rem;*/
+/*    background-color: #f8f9fa;*/
+/*    border-radius: 4px;*/
+/*}*/
+
+/*.location-display i {*/
+/*    color: #ffd700;*/
+/*}*/
+
+/**/
+
+/* Add these new styles and update existing ones */
+.file-name-input {
+    flex-grow: 1;
+    margin-right: 1rem;
+}
+
+.file-name-field {
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.file-name-field:hover {
+    border-color: #ccc;
+}
+
+.file-name-field:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
 .location-display {
     display: flex;
     align-items: center;
@@ -310,6 +328,41 @@
     border-radius: 4px;
 }
 
+.location-label {
+    color: #666;
+    font-size: 0.9rem;
+}
+
 .location-display i {
     color: #ffd700;
 }
+
+.folder-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    position: relative;
+}
+
+.delete-folder-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 0.25rem;
+    margin-left: auto;
+    border-radius: 4px;
+}
+
+.folder-item:hover .delete-folder-btn {
+    display: block;
+}
+
+.delete-folder-btn:hover {
+    background-color: #dc354520;
+}
+

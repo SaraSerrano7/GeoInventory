@@ -19,48 +19,48 @@ function openUploadModal(event) {
 let selectedFiles = [];
 
 let folderStructure = {
-    'Project Root': {
+    root: {
+        name: 'Project Root',
         type: 'folder',
         children: {}
     }
 };
 
 function createFolder(path) {
-    let current = folderStructure;
+    let current = folderStructure.root;
     const parts = path.split('/').filter(p => p);
     let currentPath = '';
 
     for (const part of parts) {
+        if (part === current.name) continue; // Skip if it's the root name
+
         currentPath = currentPath ? `${currentPath}/${part}` : part;
-        let pointer = current['Project Root'];
-        const pathParts = currentPath.split('/');
 
-        for (let i = 0; i < pathParts.length - 1; i++) {
-            pointer = pointer.children[pathParts[i]];
-        }
-
-        if (!pointer.children[part]) {
-            pointer.children[part] = {
+        if (!current.children[part]) {
+            current.children[part] = {
+                name: part,
                 type: 'folder',
                 children: {}
             };
         }
+        current = current.children[part];
     }
     console.log('Updated folder structure:', JSON.stringify(folderStructure, null, 2));
 }
 
+
 function handleFileSelect(event) {
-    console.log("Files selected:", event.target.files); // Debug log
+    console.log("Files selected:", event.target.files);
     const files = Array.from(event.target.files);
 
     selectedFiles = selectedFiles.concat(files.map(file => ({
         file: file,
+        fileName: file.name,
         projects: [],
-        location: 'Project Root', // Default location
         teams: [],
         categories: [],
-        id: Math.random().toString(36).substr(2, 9) // Unique ID for each file
-
+        location: folderStructure.root.name, // Use current root name
+        id: Math.random().toString(36).substr(2, 9)
     })));
 
     displayFiles();
@@ -77,10 +77,19 @@ function displayFiles() {
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
 
+        const rootName = fileData.projects.length > 0 ? fileData.projects[0] : 'Project Root';
+
+
         fileItem.innerHTML = `
             <div class="file-header">
                 <i class="fas fa-file"></i>
-                <span>${fileData.file.name}</span>
+                <div class="file-name-input">
+                    <input type="text" 
+                           value="${fileData.fileName}"
+                           onchange="updateFileName(${index}, this.value)"
+                           class="file-name-field"
+                           title="Original filename: ${fileData.file.name}">
+                </div>
                 <button onclick="removeFile('${fileData.id}')" class="remove-file-btn">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -89,21 +98,21 @@ function displayFiles() {
             
             <div class="select-group">
                 <label>Projects</label>
-                <select onchange="addTag(${index}, 'projects', this.value)">
+<!--                <select onchange="updateFileProject(${index}, this.value)">-->
+                    <select>
                     <option value="">Select project</option>
                     {% for project in projects %}
-                        <option value="{{ project.name }}">{{ project.name }}</option>
+                        <option value="{{ project.name }}" ${fileData.projects.includes("{{ project.name }}") ? 'selected' : ''}>
+                            {{ project.name }}
+                        </option>
                     {% endfor %}
-                </select>
-                <div class="tag-container" id="projects-${index}">
-                    ${fileData.projects.map(tag => createTag(tag, index, 'projects')).join('')}
-                </div>
+                </select>                
             </div>
             
             <div class="select-group">
                 <label>Location</label>
                 <div class="folder-tree">
-                    ${generateFolderTree(folderStructure['Project Root'], '', index)}
+                    ${generateFolderTree(folderStructure.root, '', index)}
                 </div>
                 <div class="location-controls">
                     <button onclick="showNewFolderDialog(${index})" class="btn btn-secondary">
@@ -111,6 +120,7 @@ function displayFiles() {
                     </button>
                 </div>
                 <div class="location-display">
+                    <span class="location-label">Selected location:</span>
                     <i class="fas fa-folder"></i>
                     <span>${fileData.location}</span>
                 </div>
@@ -151,9 +161,14 @@ function displayFiles() {
 function generateFolderTree(folder, path, fileIndex) {
     let tree = `
         <div class="folder-item ${path === '' ? 'active' : ''}" 
-             onclick="updateLocation(${fileIndex}, '${path || 'Project Root'}')">
+             onclick="updateLocation(${fileIndex}, '${path || folder.name}')">
             <i class="fas ${path === '' ? 'fa-folder-open' : 'fa-folder'}"></i>
-            <span>${path === '' ? 'Project Root' : path.split('/').pop()}</span>
+            <span>${path === '' ? folder.name : path.split('/').pop()}</span>
+            ${path !== '' ? `
+                <button onclick="deleteFolder('${path}', ${fileIndex})" class="delete-folder-btn" title="Delete folder">
+                    <i class="fas fa-trash"></i>
+                </button>
+            ` : ''}
         </div>
     `;
 
@@ -163,14 +178,95 @@ function generateFolderTree(folder, path, fileIndex) {
         tree += '<div class="subfolder-container">';
         for (const [name, content] of sortedFolders) {
             const newPath = path ? `${path}/${name}` : name;
-            if (content.type === 'folder') {
-                tree += generateFolderTree(content, newPath, fileIndex);
-            }
+            tree += generateFolderTree(content, newPath, fileIndex);
         }
         tree += '</div>';
     }
 
     return tree;
+}
+
+function updateFileName(fileIndex, newName) {
+    selectedFiles[fileIndex].fileName = newName;
+}
+
+function updateFileProject(fileIndex, projectName) {
+    const oldProject = selectedFiles[fileIndex].projects[0];
+
+    if (projectName) {
+        selectedFiles[fileIndex].projects = [projectName];
+        // Update root folder name
+        folderStructure.root.name = projectName;
+
+        // Update locations for all files that were in the old root
+        selectedFiles.forEach(file => {
+            if (file.location === oldProject || file.location === 'Project Root') {
+                file.location = projectName;
+            } else if (oldProject && file.location.startsWith(oldProject + '/')) {
+                // Update paths that started with the old project name
+                file.location = projectName + file.location.substring(oldProject.length);
+            }
+        });
+    } else {
+        selectedFiles[fileIndex].projects = [];
+        // Reset root folder name
+        folderStructure.root.name = 'Project Root';
+
+        // Update locations for all files that were in the project
+        selectedFiles.forEach(file => {
+            if (file.location === oldProject) {
+                file.location = 'Project Root';
+            }
+        });
+    }
+
+    displayFiles();
+}
+
+function deleteFolder(path, fileIndex) {
+    event.stopPropagation(); // Prevent folder selection when clicking delete
+
+    // Check if folder is empty
+    const folder = getFolderByPath(path);
+    if (folder && Object.keys(folder.children).length === 0) {
+        // Check if any files are using this location
+        const filesInFolder = selectedFiles.some(file =>
+            file.location === path || file.location.startsWith(path + '/'));
+
+        if (!filesInFolder) {
+            deleteFolderFromStructure(path);
+            displayFiles();
+        } else {
+            alert('Cannot delete folder: it contains files');
+        }
+    } else {
+        alert('Cannot delete folder: it contains subfolders');
+    }
+}
+
+function getFolderByPath(path) {
+
+    let current = folderStructure.root;
+    console.log(current)
+    const parts = path.split('/');
+
+    for (const part of parts) {
+        if (!current.children[part]) return null;
+        current = current.children[part];
+    }
+    return current;
+}
+
+function deleteFolderFromStructure(path) {
+    const parts = path.split('/');
+    const folderName = parts.pop();
+    let current = folderStructure.root;
+
+    for (const part of parts) {
+        current = current.children[part];
+    }
+
+    delete current.children[folderName];
 }
 
 function generateFolderOptions(folder, path, indent = '') {
