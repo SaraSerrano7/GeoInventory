@@ -27,4 +27,4 @@ def homepageView(request):
 
 @login_required
 def uploadFilesView(request):
-    return render(request, 'upload_files/upload_files.html')
+    return render(request, 'Files/upload_files/upload_files.html')

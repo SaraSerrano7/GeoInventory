@@ -7,175 +7,8 @@
     <title>Homepage</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="{% static 'js/upload.js' %}"></script>
 
-{#    <style>#}
-{#        .header {#}
-{#            background-color: #f8f9fa;#}
-{#            padding: 1rem;#}
-{#            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);#}
-{#            display: flex;#}
-{#            justify-content: space-between;#}
-{#            align-items: center;#}
-{#        }#}
-{##}
-{#        .left-section {#}
-{#            display: flex;#}
-{#            align-items: center;#}
-{#            gap: 1rem;#}
-{#        }#}
-{##}
-{#        .home-icon {#}
-{#            font-size: 1.5rem;#}
-{#            color: #333;#}
-{#            text-decoration: none;#}
-{#        }#}
-{##}
-{#        .actions-dropdown {#}
-{#            position: relative;#}
-{#            display: inline-block;#}
-{#        }#}
-{##}
-{#        .actions-button {#}
-{#            padding: 0.5rem 1rem;#}
-{#            background-color: #007bff;#}
-{#            color: white;#}
-{#            border: none;#}
-{#            border-radius: 4px;#}
-{#            cursor: pointer;#}
-{#        }#}
-{##}
-{#        .dropdown-content {#}
-{#            display: none;#}
-{#            position: absolute;#}
-{#            background-color: white;#}
-{#            min-width: 160px;#}
-{#            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);#}
-{#            z-index: 1;#}
-{#        }#}
-{##}
-{#        .actions-dropdown:hover .dropdown-content {#}
-{#            display: block;#}
-{#        }#}
-{##}
-{#        .dropdown-content a {#}
-{#            color: #333;#}
-{#            padding: 12px 16px;#}
-{#            text-decoration: none;#}
-{#            display: block;#}
-{#        }#}
-{##}
-{#        .dropdown-content a:hover {#}
-{#            background-color: #f1f1f1;#}
-{#        }#}
-{##}
-{#        .search-section {#}
-{#            flex-grow: 1;#}
-{#            margin: 0 2rem;#}
-{#            display: flex;#}
-{#            justify-content: center;#}
-{#        }#}
-{##}
-{#        .search-box {#}
-{#            display: flex;#}
-{#            align-items: center;#}
-{#            width: 50%;#}
-{#            max-width: 600px;#}
-{#        }#}
-{##}
-{#        .search-input {#}
-{#            flex-grow: 1;#}
-{#            padding: 0.5rem;#}
-{#            border: 1px solid #ddd;#}
-{#            border-radius: 4px 0 0 4px;#}
-{#        }#}
-{##}
-{#        .search-button {#}
-{#            padding: 0.5rem 1rem;#}
-{#            background-color: #f8f9fa;#}
-{#            border: 1px solid #ddd;#}
-{#            border-left: none;#}
-{#            border-radius: 0 4px 4px 0;#}
-{#            cursor: pointer;#}
-{#        }#}
-{##}
-{#        .right-section {#}
-{#            display: flex;#}
-{#            align-items: center;#}
-{#            gap: 1rem;#}
-{#        }#}
-{##}
-{#        .right-section button {#}
-{#            padding: 0.5rem 1rem;#}
-{#            background-color: #f8f9fa;#}
-{#            border: 1px solid #ddd;#}
-{#            border-radius: 4px;#}
-{#            cursor: pointer;#}
-{#        }#}
-{##}
-{#        .right-section button:hover {#}
-{#            background-color: #e9ecef;#}
-{#        }#}
-{##}
-{#        .main-container {#}
-{#            display: flex;#}
-{#        margin-top: 64px; /* Height of header */ height: calc(100vh - 64px);#}
-{#        }#}
-{##}
-{#        .file-explorer {#}
-{#            width: 300px;#}
-{#            background-color: #f8f9fa;#}
-{#            border-right: 1px solid #ddd;#}
-{#            padding: 1rem;#}
-{#            overflow-y: auto;#}
-{#        }#}
-{##}
-{#        .file-explorer-header {#}
-{#            font-size: 1.2rem;#}
-{#            font-weight: bold;#}
-{#            margin-bottom: 1rem;#}
-{#            padding-bottom: 0.5rem;#}
-{#            border-bottom: 1px solid #ddd;#}
-{#        }#}
-{##}
-{#        .no-files-message {#}
-{#            color: #666;#}
-{#            text-align: center;#}
-{#            padding: 2rem;#}
-{#            font-style: italic;#}
-{#        }#}
-{##}
-{#        .data-viewer {#}
-{#            flex-grow: 1;#}
-{#            padding: 2rem;#}
-{#            overflow-y: auto;#}
-{#        }#}
-{##}
-{#        .no-data-message {#}
-{#            color: #666;#}
-{#            text-align: center;#}
-{#            padding: 2rem;#}
-{#            font-style: italic;#}
-{#        }#}
-{##}
-{#        /* Logout button styling */#}
-{#        .logout-form {#}
-{#            margin: 0;#}
-{#            padding: 0;#}
-{#        }#}
-{##}
-{#        .logout-form button {#}
-{#            padding: 0.5rem 1rem;#}
-{#            background-color: #f8f9fa;#}
-{#            border: 1px solid #ddd;#}
-{#            border-radius: 4px;#}
-{#            cursor: pointer;#}
-{#            color: #333;#}
-{#        }#}
-{##}
-{#        .logout-form button:hover {#}
-{#            background-color: #e9ecef;#}
-{#        }#}
-{#    </style>#}
 </head>
 <body>
 <header class="header">
@@ -187,6 +20,8 @@
             <button class="actions-button">Actions</button>
             <div class="dropdown-content">
                 <a href="{% url 'upload_files' %}"><i class="fas fa-upload"></i> Upload Files</a>
+                <a href="#" onclick="openUploadModal(event)"><i class="fas fa-upload"></i> Upload Files 2</a>
+                <a href="#"><i class="fas fa-upload"></i> Analyze data</a>
             </div>
         </div>
     </div>
@@ -216,10 +51,217 @@
     </div>
 </header>
 
+<div id="uploadModal" class="modal" style="display: none;">
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .modal-footer {
+            padding: 1rem;
+            border-top: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .file-item {
+            border: 1px solid #e5e5e5;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .file-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .tag {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            padding: 0.25rem 0.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .tag button {
+            border: none;
+            background: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.875rem;
+        }
+
+        .status-icon {
+            margin-left: auto;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #e5e5e5;
+            color: #333;
+        }
+
+        .select-group {
+            margin-bottom: 1rem;
+        }
+
+        .select-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .select-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+        }
+
+        .confirmation-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            z-index: 1100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1050;
+        }
+    </style>
+
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Upload Files</h2>
+            <button onclick="showCancelConfirmation()" class="btn btn-secondary">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <input type="file" id="fileInput" multiple style="display: none" onchange="handleFileSelect(event)">
+            <button onclick="document.getElementById('fileInput').click()" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Select Files
+            </button>
+
+            <div id="fileList" class="file-list">
+                <!-- Files will be added here dynamically -->
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button onclick="showCancelConfirmation()" class="btn btn-secondary">Cancel</button>
+            <button onclick="confirmUpload()" id="uploadButton" class="btn btn-primary" style="display: none;">
+                Upload All Files
+            </button>
+            <button onclick="window.location.href='/'" id="continueButton" class="btn btn-primary" style="display: none;">
+                Continue
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="confirmationOverlay" class="overlay"></div>
+<div id="cancelConfirmation" class="confirmation-modal" style="display: none;">
+    <h3>Cancel Upload?</h3>
+    <p>Are you sure you want to cancel? All selected files will be lost.</p>
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+        <button onclick="hideCancelConfirmation()" class="btn btn-secondary">No, keep files</button>
+        <button onclick="window.location.href='/'" class="btn btn-primary">Yes, cancel upload</button>
+    </div>
+</div>
+
+<div id="uploadConfirmation" class="confirmation-modal" style="display: none;">
+    <h3>Confirm Upload</h3>
+    <p>Are you sure you want to upload all files?</p>
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+        <button onclick="hideUploadConfirmation()" class="btn btn-secondary">No, not yet</button>
+        <button onclick="startUpload()" class="btn btn-primary">Yes, upload files</button>
+    </div>
+</div>
+
+
 <div class="content">
     {% block main_content %}
     {% endblock %}
 </div>
+
+
+
 
 
 </body>

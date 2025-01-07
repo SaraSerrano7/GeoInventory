@@ -165,3 +165,45 @@
 .logout-form button:hover {
     background-color: #e9ecef;
 }
+/**/
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none; /* Will be changed to flex when opened */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-body {
+    padding: 1rem;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.file-list {
+    margin-top: 1rem;
+}
+
+.file-item {
+    border: 1px solid #e5e5e5;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+}
