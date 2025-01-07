@@ -18,6 +18,37 @@ function openUploadModal(event) {
 // Replace the current file input event listener with these functions
 let selectedFiles = [];
 
+let folderStructure = {
+    'Project Root': {
+        type: 'folder',
+        children: {}
+    }
+};
+
+function createFolder(path) {
+    let current = folderStructure;
+    const parts = path.split('/').filter(p => p);
+    let currentPath = '';
+
+    for (const part of parts) {
+        currentPath = currentPath ? `${currentPath}/${part}` : part;
+        let pointer = current['Project Root'];
+        const pathParts = currentPath.split('/');
+
+        for (let i = 0; i < pathParts.length - 1; i++) {
+            pointer = pointer.children[pathParts[i]];
+        }
+
+        if (!pointer.children[part]) {
+            pointer.children[part] = {
+                type: 'folder',
+                children: {}
+            };
+        }
+    }
+    console.log('Updated folder structure:', JSON.stringify(folderStructure, null, 2));
+}
+
 function handleFileSelect(event) {
     console.log("Files selected:", event.target.files); // Debug log
     const files = Array.from(event.target.files);
@@ -25,8 +56,11 @@ function handleFileSelect(event) {
     selectedFiles = selectedFiles.concat(files.map(file => ({
         file: file,
         projects: [],
+        location: 'Project Root', // Default location
         teams: [],
-        categories: []
+        categories: [],
+        id: Math.random().toString(36).substr(2, 9) // Unique ID for each file
+
     })));
 
     displayFiles();
@@ -47,6 +81,9 @@ function displayFiles() {
             <div class="file-header">
                 <i class="fas fa-file"></i>
                 <span>${fileData.file.name}</span>
+                <button onclick="removeFile('${fileData.id}')" class="remove-file-btn">
+                    <i class="fas fa-trash"></i>
+                </button>
                 ${fileData.status ? getStatusIcon(fileData.status) : ''}
             </div>
             
@@ -62,6 +99,23 @@ function displayFiles() {
                     ${fileData.projects.map(tag => createTag(tag, index, 'projects')).join('')}
                 </div>
             </div>
+            
+            <div class="select-group">
+                <label>Location</label>
+                <div class="folder-tree">
+                    ${generateFolderTree(folderStructure['Project Root'], '', index)}
+                </div>
+                <div class="location-controls">
+                    <button onclick="showNewFolderDialog(${index})" class="btn btn-secondary">
+                        <i class="fas fa-folder-plus"></i> New Folder Here
+                    </button>
+                </div>
+                <div class="location-display">
+                    <i class="fas fa-folder"></i>
+                    <span>${fileData.location}</span>
+                </div>
+            </div>
+            
 
             <div class="select-group">
                 <label>Teams</label>
@@ -93,6 +147,72 @@ function displayFiles() {
         fileList.appendChild(fileItem);
     });
 }
+
+function generateFolderTree(folder, path, fileIndex) {
+    let tree = `
+        <div class="folder-item ${path === '' ? 'active' : ''}" 
+             onclick="updateLocation(${fileIndex}, '${path || 'Project Root'}')">
+            <i class="fas ${path === '' ? 'fa-folder-open' : 'fa-folder'}"></i>
+            <span>${path === '' ? 'Project Root' : path.split('/').pop()}</span>
+        </div>
+    `;
+
+    const sortedFolders = Object.entries(folder.children).sort(([a], [b]) => a.localeCompare(b));
+
+    if (sortedFolders.length > 0) {
+        tree += '<div class="subfolder-container">';
+        for (const [name, content] of sortedFolders) {
+            const newPath = path ? `${path}/${name}` : name;
+            if (content.type === 'folder') {
+                tree += generateFolderTree(content, newPath, fileIndex);
+            }
+        }
+        tree += '</div>';
+    }
+
+    return tree;
+}
+
+function generateFolderOptions(folder, path, indent = '') {
+    let options = '';
+    for (const [name, content] of Object.entries(folder.children)) {
+        const fullPath = path ? `${path}/${name}` : name;
+        options += `<option value="${fullPath}">${indent}${name}</option>`;
+        if (content.type === 'folder') {
+            options += generateFolderOptions(content, fullPath, indent + '└─ ');
+        }
+    }
+    return options;
+}
+
+
+function showNewFolderDialog(fileIndex) {
+    const folderName = prompt('Enter new folder name:');
+    if (folderName && folderName.trim()) {
+        const currentLocation = selectedFiles[fileIndex].location;
+        const newPath = currentLocation === 'Project Root'
+            ? folderName
+            : `${currentLocation}/${folderName}`;
+
+        createFolder(newPath);
+        selectedFiles[fileIndex].location = newPath;
+        displayFiles();
+    }
+}
+
+function updateLocation(fileIndex, newLocation) {
+    selectedFiles[fileIndex].location = newLocation;
+    displayFiles();
+}
+
+function removeFile(fileId) {
+    selectedFiles = selectedFiles.filter(file => file.id !== fileId);
+    if (selectedFiles.length === 0) {
+        document.getElementById('uploadButton').style.display = 'none';
+    }
+    displayFiles();
+}
+
 
 function createTag(tag, fileIndex, type) {
     return `
@@ -245,6 +365,7 @@ async function startUpload() {
         const formData = new FormData();
         formData.append('file', selectedFiles[i].file);
         formData.append('projects', JSON.stringify(selectedFiles[i].projects));
+        formData.append('location', selectedFiles[i].location);
         formData.append('teams', JSON.stringify(selectedFiles[i].teams));
         formData.append('categories', JSON.stringify(selectedFiles[i].categories));
 

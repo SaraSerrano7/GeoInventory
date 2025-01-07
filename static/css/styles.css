@@ -207,3 +207,109 @@
     margin-bottom: 1rem;
     border-radius: 4px;
 }
+
+/* Add these styles to your existing CSS */
+/*.location-controls {*/
+/*    display: flex;*/
+/*    gap: 0.5rem;*/
+/*    margin-bottom: 0.5rem;*/
+/*}*/
+
+.location-select {
+    flex-grow: 1;
+    padding: 0.5rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+}
+
+/*.location-display {*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*    gap: 0.5rem;*/
+/*    padding: 0.5rem;*/
+/*    background-color: #f8f9fa;*/
+/*    border-radius: 4px;*/
+/*    margin-top: 0.5rem;*/
+/*}*/
+
+/*.location-display i {*/
+/*    color: #ffd700;*/
+/*}*/
+
+.remove-file-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.remove-file-btn:hover {
+    background-color: #dc354520;
+}
+
+.file-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+
+/* Update these styles in your CSS */
+.folder-tree {
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.folder-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.folder-item:hover {
+    background-color: #f8f9fa;
+}
+
+.folder-item.active {
+    background-color: #e9ecef;
+}
+
+.folder-item i {
+    color: #ffd700;
+}
+
+.subfolder-container {
+    margin-left: 1.5rem;
+    border-left: 1px solid #e5e5e5;
+    padding-left: 0.5rem;
+}
+
+.location-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+}
+
+.location-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.location-display i {
+    color: #ffd700;
+}
