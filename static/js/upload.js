@@ -68,17 +68,16 @@ function handleFileSelect(event) {
 }
 
 function displayFiles() {
-    console.log("Displaying files:", selectedFiles); // Debug log
+    console.log("Displaying files:", selectedFiles);
     const fileList = document.getElementById('fileList');
-
-    fileList.innerHTML = '';  // Clear current list
+    fileList.innerHTML = '';
 
     selectedFiles.forEach((fileData, index) => {
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
 
-        const rootName = fileData.projects.length > 0 ? fileData.projects[0] : 'Project Root';
-
+        // Use this specific file's project instead of a global one
+        const currentProject = fileData.projects[0] || 'Project Root';
 
         fileItem.innerHTML = `
             <div class="file-header">
@@ -98,8 +97,7 @@ function displayFiles() {
             
             <div class="select-group">
                 <label>Projects</label>
-<!--                <select onchange="updateFileProject(${index}, this.value)">-->
-                    <select>
+                <select onchange="updateFileProject(${index}, this.value)">
                     <option value="">Select project</option>
                     {% for project in projects %}
                         <option value="{{ project.name }}" ${fileData.projects.includes("{{ project.name }}") ? 'selected' : ''}>
@@ -112,7 +110,7 @@ function displayFiles() {
             <div class="select-group">
                 <label>Location</label>
                 <div class="folder-tree">
-                    ${generateFolderTree(folderStructure.root, '', index)}
+                    ${generateFolderTree(folderStructure.root, '', index, currentProject)}
                 </div>
                 <div class="location-controls">
                     <button onclick="showNewFolderDialog(${index})" class="btn btn-secondary">
@@ -125,7 +123,6 @@ function displayFiles() {
                     <span>${fileData.location}</span>
                 </div>
             </div>
-            
 
             <div class="select-group">
                 <label>Teams</label>
@@ -157,13 +154,12 @@ function displayFiles() {
         fileList.appendChild(fileItem);
     });
 }
-
-function generateFolderTree(folder, path, fileIndex) {
+function generateFolderTree(folder, path, fileIndex, currentProject) {
     let tree = `
         <div class="folder-item ${path === '' ? 'active' : ''}" 
-             onclick="updateLocation(${fileIndex}, '${path || folder.name}')">
+             onclick="updateLocation(${fileIndex}, '${path || currentProject}')">
             <i class="fas ${path === '' ? 'fa-folder-open' : 'fa-folder'}"></i>
-            <span>${path === '' ? folder.name : path.split('/').pop()}</span>
+            <span>${path === '' ? currentProject : path.split('/').pop()}</span>
             ${path !== '' ? `
                 <button onclick="deleteFolder('${path}', ${fileIndex})" class="delete-folder-btn" title="Delete folder">
                     <i class="fas fa-trash"></i>
@@ -178,7 +174,7 @@ function generateFolderTree(folder, path, fileIndex) {
         tree += '<div class="subfolder-container">';
         for (const [name, content] of sortedFolders) {
             const newPath = path ? `${path}/${name}` : name;
-            tree += generateFolderTree(content, newPath, fileIndex);
+            tree += generateFolderTree(content, newPath, fileIndex, currentProject);
         }
         tree += '</div>';
     }
@@ -186,42 +182,38 @@ function generateFolderTree(folder, path, fileIndex) {
     return tree;
 }
 
+
 function updateFileName(fileIndex, newName) {
     selectedFiles[fileIndex].fileName = newName;
 }
 
 function updateFileProject(fileIndex, projectName) {
-    const oldProject = selectedFiles[fileIndex].projects[0];
+    const fileData = selectedFiles[fileIndex];
+    const oldProject = fileData.projects[0];
 
     if (projectName) {
-        selectedFiles[fileIndex].projects = [projectName];
-        // Update root folder name
-        folderStructure.root.name = projectName;
+        // Update only this file's project
+        fileData.projects = [projectName];
 
-        // Update locations for all files that were in the old root
-        selectedFiles.forEach(file => {
-            if (file.location === oldProject || file.location === 'Project Root') {
-                file.location = projectName;
-            } else if (oldProject && file.location.startsWith(oldProject + '/')) {
-                // Update paths that started with the old project name
-                file.location = projectName + file.location.substring(oldProject.length);
-            }
-        });
+        // Update only this file's location if it was in root or old project
+        if (fileData.location === 'Project Root' || fileData.location === oldProject) {
+            fileData.location = projectName;
+        } else if (oldProject && fileData.location.startsWith(oldProject + '/')) {
+            // Update path that started with the old project name
+            fileData.location = projectName + fileData.location.substring(oldProject.length);
+        }
     } else {
-        selectedFiles[fileIndex].projects = [];
-        // Reset root folder name
-        folderStructure.root.name = 'Project Root';
-
-        // Update locations for all files that were in the project
-        selectedFiles.forEach(file => {
-            if (file.location === oldProject) {
-                file.location = 'Project Root';
-            }
-        });
+        // Clear project and reset location to root only for this file
+        fileData.projects = [];
+        if (fileData.location === oldProject) {
+            fileData.location = 'Project Root';
+        }
     }
 
+    // Update display without modifying other files
     displayFiles();
 }
+
 
 function deleteFolder(path, fileIndex) {
     event.stopPropagation(); // Prevent folder selection when clicking delete
