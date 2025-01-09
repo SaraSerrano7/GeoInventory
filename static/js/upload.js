@@ -325,17 +325,17 @@ function removeTag(fileIndex, type, tag) {
     displayFiles();
 }
 
-document.getElementById('fileInput').addEventListener('change', function (e) {
-    const files = Array.from(e.target.files);
-    selectedFiles = selectedFiles.concat(files.map(file => ({
-        file: file,
-        projects: [],
-        teams: [],
-        categories: []
-    })));
-    renderFiles();
-    document.getElementById('uploadButton').style.display = 'block';
-});
+// document.getElementById('fileInput').addEventListener('change', function (e) {
+//     const files = Array.from(e.target.files);
+//     selectedFiles = selectedFiles.concat(files.map(file => ({
+//         file: file,
+//         projects: [],
+//         teams: [],
+//         categories: []
+//     })));
+//     renderFiles();
+//     document.getElementById('uploadButton').style.display = 'block';
+// });
 
 function renderFiles() {
     const fileList = document.getElementById('fileList');
@@ -348,7 +348,7 @@ function renderFiles() {
                 </div>
 
                 <div class="select-group">
-                    <label>Projects</label>
+                    <label>Project</label>
                     <select onchange="addTag(${index}, 'projects', this.value)">
                         <option value="">Select project</option>
                         {% for project in projects %}
