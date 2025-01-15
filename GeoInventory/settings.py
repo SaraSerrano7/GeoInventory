@@ -75,14 +75,22 @@ WSGI_APPLICATION = 'GeoInventory.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+with open('GeoInventory/config/db.conf') as db_file:
+    credentials = db_file.read()
+
+cred_keys = [key.split('=') for key in credentials.split('\n')]
+keys = {}
+for key in cred_keys:
+    keys[key[0]] = key[1][1:-1]
+
 DATABASES = {
    'default': {
        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-       'NAME': '',
-       'USER': '',
-       'PASSWORD': '',
-       'HOST': '',
-       'PORT': '',
+       'NAME': keys['NAME'],
+       'USER': keys['USER'],
+       'PASSWORD': keys['PASSWORD'],
+       'HOST': keys['HOST'],
+       'PORT': keys['PORT'],
    }
 }
 
