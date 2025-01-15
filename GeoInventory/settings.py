@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
     'Files',
     'Api',
     'Management',
@@ -75,11 +76,22 @@ WSGI_APPLICATION = 'GeoInventory.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+   'default': {
+       'ENGINE': 'django.contrib.gis.db.backends.postgis',
+       'NAME': '',
+       'USER': '',
+       'PASSWORD': '',
+       'HOST': '',
+       'PORT': '',
+   }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
