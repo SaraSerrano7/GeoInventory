@@ -5,7 +5,7 @@ These model classes represents Files and Users relations.
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.timezone import now
-
+from django.contrib.gis.db import models
 
 # Create your models here.
 
@@ -228,7 +228,7 @@ class Category(DigitalResource):
 #     file = models.ForeignKey(File, on_delete=models.SET_NULL)
 
 
-GEOMETRY_CHOICES = [
+GEOJSON_GEOMETRY_TYPE_CHOICES = [
     ('point', 'point'),
     ('multipoint', 'multipoint'),
     ('line', 'line'),
@@ -236,14 +236,60 @@ GEOMETRY_CHOICES = [
     ('multipolygon', 'multipolygon'),
 ]
 
+GEOJSON_TYPE_CHOICES = [
+    ('Feature', 'Feature'),
+    ('FeatureCollection', 'FeatureCollection'),
+]
 
-class Shapefile(File):
+GEOJSON_ATTR_TYPE_CHOICES = [
+    ('int', 'int'),
+    ('float', 'float'),
+    ('str', 'str'),
+
+]
+
+
+class GeoJSONFeature(models.Model):
     """
-    Class to represent a Shapefile filetype
+    Class to represent a single GeoJSON feature
     """
-    # geometry =
-    geometry_type = models.CharField(max_length=50, choices=GEOMETRY_CHOICES)
-    properties = models.JSONField()
+    feature_type = models.CharField(max_length=50, choices=GEOJSON_GEOMETRY_TYPE_CHOICES)
+    geometry = models.GeometryField(null=True, blank=True)
+    attribute_name = models.CharField(max_length=100)
+    attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
+    attribute_value = models.CharField(max_length=250)
+
+    def __str__(self):
+        return str(self.feature_type) + str(self.pk)
+
+
+class GeoJSON(File):
+    """
+    Class to represent a GeoJSON filetype
+    """
+    content_type = models.CharField(max_length=50, choices=GEOJSON_TYPE_CHOICES)
+
+    # content = models.ManyToManyField(GeoJSONFeature, related_name='content')
 
     def __str__(self):
         return str(self.name)
+
+
+class Content(models.Model):
+    """
+    Class to represent the features contained in a GeoJSON file
+    """
+    geojson_file = models.ForeignKey(GeoJSON, null=True, blank=True, on_delete=models.SET_NULL)
+    feature = models.ForeignKey(GeoJSONFeature, null=True, blank=True, on_delete=models.SET_NULL)
+
+# class Shapefile(File):
+#     """
+#     Class to represent a Shapefile filetype
+#     Warning: not implemented yet.
+#     """
+#     # geometry =
+#     geometry_type = models.CharField(max_length=50, choices=GEOMETRY_CHOICES)
+#     properties = models.JSONField()
+#
+#     def __str__(self):
+#         return str(self.name)

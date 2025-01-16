@@ -3,6 +3,7 @@ todo.txt
 db.sqlite3
 GeoInventory/__pycache__/
 GeoInventory/config/*
+GeoInventory/config/db.conf
 Api/migrations/
 Files/migrations/
 Management/migrations
