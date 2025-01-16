@@ -3,9 +3,9 @@ Files' app views to develop file management functions
 """
 
 # Create your views here.
-from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
+
 from .models import File
 
 
@@ -14,7 +14,7 @@ def homepageView(request):
     """
     Main view where the user interacts with the Files app
     """
-    available_files = File.count_existing()#.objects.count()
+    available_files = File.count_existing()
 
     context = {
         'available_files': available_files,

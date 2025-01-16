@@ -19,18 +19,20 @@ class DigitalResource(models.Model):
         on_delete=models.SET_DEFAULT,
         related_name='creator_info'
     )
-    created_at = models.DateTimeField(now())
+    created_at = models.DateTimeField(default=now, editable=False)
 
     editor = models.ForeignKey(
         User,
         default='deleted user',
         on_delete=models.SET_DEFAULT,
-        related_name='editor_info'
+        related_name='editor_info',
+        null=True,
+        blank=True
     )
-    edited_at = models.DateTimeField()
+    edited_at = models.DateTimeField(null=True, blank=True)
 
     deleted = models.BooleanField(default=False)
-    deleted_at = models.DateTimeField()
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.pk
@@ -115,7 +117,7 @@ class Assignations(DigitalResource):
         default='deleted team',
         on_delete=models.SET_DEFAULT
     )
-    assignation_date = models.DateTimeField(now())
+    assignation_date = models.DateTimeField(default=now, editable=False)
 
     # info = models.ManyToManyField(DigitalResource, related_name='assignations_info')
 
