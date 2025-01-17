@@ -139,9 +139,13 @@ class File(DigitalResource):
         return str(self.name)
 
     @staticmethod
-    def count_existing():
+    def count_all_existing_files():
         return File.objects.count()
 
+    @staticmethod
+    def count_user_files(current_user: User):
+        return File.objects.filter(creator=current_user.id).count()
+        
 
 class Access(DigitalResource):
     """

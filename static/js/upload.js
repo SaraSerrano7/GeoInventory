@@ -96,7 +96,7 @@ function displayFiles() {
             </div>
             
             <div class="select-group">
-                <label>Projects</label>
+                <label>Project</label>
                 <select onchange="updateFileProject(${index}, this.value)">
                     <option value="">Select project</option>
                     {% for project in projects %}
