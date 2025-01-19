@@ -3,9 +3,9 @@ These model classes represents Files and Users relations.
 """
 
 from django.contrib.auth.models import User
-from django.db import models
-from django.utils.timezone import now
 from django.contrib.gis.db import models
+from django.utils.timezone import now
+
 
 # Create your models here.
 
@@ -145,7 +145,7 @@ class File(DigitalResource):
     @staticmethod
     def count_user_files(current_user: User):
         return File.objects.filter(creator=current_user.id).count()
-        
+
 
 class Access(DigitalResource):
     """

@@ -1,13 +1,26 @@
-// let selectedFiles = [];
+async function fetchUserProjects() {
+    try {
+        const response = await fetch('/api/user_projects/', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
 
-// function openUploadModal(event) {
-//     event.preventDefault();
-//     document.getElementById('uploadModal').style.display = 'flex';
-// }
+        if (!response.ok) {
+            throw new Error('Failed to fetch projects');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching projects:', error);
+        return [];
+    }
+}
+
 
 function openUploadModal(event) {
     event.preventDefault();
-    console.log("Opening modal"); // Debug log
     const modal = document.getElementById('uploadModal');
     modal.style.display = 'flex';
     selectedFiles = []; // Reset files when opening modal
@@ -45,12 +58,10 @@ function createFolder(path) {
         }
         current = current.children[part];
     }
-    console.log('Updated folder structure:', JSON.stringify(folderStructure, null, 2));
 }
 
 
 function handleFileSelect(event) {
-    console.log("Files selected:", event.target.files);
     const files = Array.from(event.target.files);
 
     selectedFiles = selectedFiles.concat(files.map(file => ({
@@ -67,17 +78,25 @@ function handleFileSelect(event) {
     document.getElementById('uploadButton').style.display = 'block';
 }
 
-function displayFiles() {
-    console.log("Displaying files:", selectedFiles);
+async function displayFiles() {
     const fileList = document.getElementById('fileList');
     fileList.innerHTML = '';
+
+    // Fetch user's projects
+    const userProjects = await fetchUserProjects();
 
     selectedFiles.forEach((fileData, index) => {
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
 
-        // Use this specific file's project instead of a global one
         const currentProject = fileData.projects[0] || 'Project Root';
+
+        // Create project options HTML
+        const projectOptions = userProjects['projects'].map(project =>
+            `<option value="${project.name}" ${fileData.projects.includes(project.name) ? 'selected' : ''}>
+                ${project.name}
+            </option>`
+        ).join('');
 
         fileItem.innerHTML = `
             <div class="file-header">
@@ -89,21 +108,20 @@ function displayFiles() {
                            class="file-name-field"
                            title="Original filename: ${fileData.file.name}">
                 </div>
+                <div class="status-container" ${!fileData.status ? 'style="display: none;"' : ''}>
+                    <span class="status-label">Status:</span>
+                    ${getStatusIcon(fileData.status)}
+                </div>
                 <button onclick="removeFile('${fileData.id}')" class="remove-file-btn">
                     <i class="fas fa-trash"></i>
                 </button>
-                ${fileData.status ? getStatusIcon(fileData.status) : ''}
             </div>
             
             <div class="select-group">
                 <label>Project</label>
                 <select onchange="updateFileProject(${index}, this.value)">
                     <option value="">Select project</option>
-                    {% for project in projects %}
-                        <option value="{{ project.name }}" ${fileData.projects.includes("{{ project.name }}") ? 'selected' : ''}>
-                            {{ project.name }}
-                        </option>
-                    {% endfor %}
+                    ${projectOptions}
                 </select>                
             </div>
             
@@ -154,25 +172,107 @@ function displayFiles() {
         fileList.appendChild(fileItem);
     });
 }
+
+// function generateFolderTree(folder, path, fileIndex, currentProject) {
+//     // Determine root folder name based on project selection
+//     console.log('folder', folder)
+//     console.log('path', path)
+//     console.log('fileIndex', fileIndex)
+//     console.log('currentProject', currentProject)
+//
+//     const rootName = currentProject === 'Project Root' ? 'Project Root' : currentProject;
+//
+//     console.log('rootName', rootName)
+//
+//     let tree = '';
+//
+//     // Only show root folder if we're at the top level
+//     if (path === '') {
+//         tree = `
+//             <div class="folder-item active" onclick="updateLocation(${fileIndex}, '${rootName}')">
+//                 <i class="fas fa-folder-open"></i>
+//                 <span>${rootName}</span>
+//             </div>
+//         `;
+//         console.log('new tree', tree)
+//     } else {
+//         // For subfolders, don't show if it's the same as the project name
+//         const folderName = path.split('/').pop();
+//         if (folderName !== currentProject) {
+//             tree = `
+//                 <div class="folder-item" onclick="updateLocation(${fileIndex}, '${path}')">
+//                     <i class="fas fa-folder"></i>
+//                     <span>${folderName}</span>
+//                     <button onclick="deleteFolder('${path}', ${fileIndex})" class="delete-folder-btn" title="Delete folder">
+//                         <i class="fas fa-trash"></i>
+//                     </button>
+//                 </div>
+//             `;
+//         }
+//         console.log('new folder name', folderName)
+//         console.log('new tree', tree)
+//     }
+//
+//     // Show subfolders only if they're not the same as the project name
+//     const sortedFolders = Object.entries(folder.children)
+//         .filter(([name]) => name !== currentProject)
+//         .sort(([a], [b]) => a.localeCompare(b));
+//
+//     console.log('sorted folders', sortedFolders)
+//
+//     if (sortedFolders.length > 0) {
+//         tree += '<div class="subfolder-container">';
+//         for (const [name, content] of sortedFolders) {
+//             const newPath = path ? `${path}/${name}` : name;
+//             tree += generateFolderTree(content, newPath, fileIndex, currentProject);
+//         }
+//         tree += '</div>';
+//     }
+//
+//     console.log('new final tree', tree)
+//
+//     return tree;
+// }
+
 function generateFolderTree(folder, path, fileIndex, currentProject) {
-    let tree = `
-        <div class="folder-item ${path === '' ? 'active' : ''}" 
-             onclick="updateLocation(${fileIndex}, '${path || currentProject}')">
-            <i class="fas ${path === '' ? 'fa-folder-open' : 'fa-folder'}"></i>
-            <span>${path === '' ? currentProject : path.split('/').pop()}</span>
-            ${path !== '' ? `
-                <button onclick="deleteFolder('${path}', ${fileIndex})" class="delete-folder-btn" title="Delete folder">
-                    <i class="fas fa-trash"></i>
-                </button>
-            ` : ''}
-        </div>
-    `;
+    let tree = '';
 
-    const sortedFolders = Object.entries(folder.children).sort(([a], [b]) => a.localeCompare(b));
+    // For the root level (empty path)
+    if (path === '') {
+        // Use project name if selected, otherwise use 'Project Root'
+        const rootName = currentProject === 'Project Root' ? 'Project Root' : currentProject;
 
-    if (sortedFolders.length > 0) {
+        tree = `
+            <div class="folder-item active" onclick="updateLocation(${fileIndex}, '${rootName}')">
+                <i class="fas fa-folder-open"></i>
+                <span>${rootName}</span>
+            </div>
+        `;
+    } else {
+        // For subfolders, don't show if it's the same as the project name
+        const folderName = path.split('/').pop();
+        // Only show the folder if it's not the same as the current project
+        if (folderName !== currentProject) {
+            tree = `
+                <div class="folder-item" onclick="updateLocation(${fileIndex}, '${path}')">
+                    <i class="fas fa-folder"></i>
+                    <span>${folderName}</span>
+                    <button onclick="deleteFolder('${path}', ${fileIndex})" class="delete-folder-btn" title="Delete folder">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Show subfolders
+    const subfolders = Object.entries(folder.children)
+        .filter(([name]) => name !== currentProject) // Filter out project name from subfolders
+        .sort(([a], [b]) => a.localeCompare(b));
+
+    if (subfolders.length > 0) {
         tree += '<div class="subfolder-container">';
-        for (const [name, content] of sortedFolders) {
+        for (const [name, content] of subfolders) {
             const newPath = path ? `${path}/${name}` : name;
             tree += generateFolderTree(content, newPath, fileIndex, currentProject);
         }
@@ -182,38 +282,72 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
     return tree;
 }
 
-
 function updateFileName(fileIndex, newName) {
     selectedFiles[fileIndex].fileName = newName;
 }
+
+// function updateFileProject(fileIndex, projectName) {
+//     const fileData = selectedFiles[fileIndex];
+//     const oldProject = fileData.projects[0];
+//
+//     if (projectName) {
+//         // Update this file's project
+//         fileData.projects = [projectName];
+//
+//         // Update location to new project root
+//         if (fileData.location === 'Project Root' || fileData.location === oldProject) {
+//             fileData.location = projectName;
+//         } else if (oldProject && fileData.location.startsWith(oldProject + '/')) {
+//             fileData.location = projectName + fileData.location.substring(oldProject.length);
+//         }
+//     } else {
+//         // Reset to default
+//         fileData.projects = [];
+//         if (fileData.location === oldProject) {
+//             fileData.location = 'Project Root';
+//         }
+//     }
+//
+//     displayFiles();
+// }
 
 function updateFileProject(fileIndex, projectName) {
     const fileData = selectedFiles[fileIndex];
     const oldProject = fileData.projects[0];
 
     if (projectName) {
-        // Update only this file's project
+        // Update this file's project
         fileData.projects = [projectName];
 
-        // Update only this file's location if it was in root or old project
+        // Update location to new project root
         if (fileData.location === 'Project Root' || fileData.location === oldProject) {
             fileData.location = projectName;
         } else if (oldProject && fileData.location.startsWith(oldProject + '/')) {
-            // Update path that started with the old project name
+            // Update paths for files in subfolders
             fileData.location = projectName + fileData.location.substring(oldProject.length);
         }
+
+        // Clear any old project folders from the structure
+        if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
+            delete folderStructure.root.children[oldProject];
+        }
     } else {
-        // Clear project and reset location to root only for this file
+        // Reset to default
         fileData.projects = [];
         if (fileData.location === oldProject) {
             fileData.location = 'Project Root';
+        } else if (fileData.location.startsWith(oldProject + '/')) {
+            fileData.location = 'Project Root' + fileData.location.substring(oldProject.length);
+        }
+
+        // Clean up any project-named folders
+        if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
+            delete folderStructure.root.children[oldProject];
         }
     }
 
-    // Update display without modifying other files
     displayFiles();
 }
-
 
 function deleteFolder(path, fileIndex) {
     event.stopPropagation(); // Prevent folder selection when clicking delete
@@ -239,7 +373,6 @@ function deleteFolder(path, fileIndex) {
 function getFolderByPath(path) {
 
     let current = folderStructure.root;
-    console.log(current)
     const parts = path.split('/');
 
     for (const part of parts) {
@@ -261,17 +394,6 @@ function deleteFolderFromStructure(path) {
     delete current.children[folderName];
 }
 
-function generateFolderOptions(folder, path, indent = '') {
-    let options = '';
-    for (const [name, content] of Object.entries(folder.children)) {
-        const fullPath = path ? `${path}/${name}` : name;
-        options += `<option value="${fullPath}">${indent}${name}</option>`;
-        if (content.type === 'folder') {
-            options += generateFolderOptions(content, fullPath, indent + '└─ ');
-        }
-    }
-    return options;
-}
 
 
 function showNewFolderDialog(fileIndex) {
@@ -312,7 +434,6 @@ function createTag(tag, fileIndex, type) {
 }
 
 function addTag(fileIndex, type, value) {
-    console.log("Adding tag:", fileIndex, type, value); // Debug log
     if (!value || selectedFiles[fileIndex][type].includes(value)) return;
 
     selectedFiles[fileIndex][type].push(value);
@@ -320,22 +441,9 @@ function addTag(fileIndex, type, value) {
 }
 
 function removeTag(fileIndex, type, tag) {
-    console.log("Removing tag:", fileIndex, type, tag); // Debug log
     selectedFiles[fileIndex][type] = selectedFiles[fileIndex][type].filter(t => t !== tag);
     displayFiles();
 }
-
-// document.getElementById('fileInput').addEventListener('change', function (e) {
-//     const files = Array.from(e.target.files);
-//     selectedFiles = selectedFiles.concat(files.map(file => ({
-//         file: file,
-//         projects: [],
-//         teams: [],
-//         categories: []
-//     })));
-//     renderFiles();
-//     document.getElementById('uploadButton').style.display = 'block';
-// });
 
 function renderFiles() {
     const fileList = document.getElementById('fileList');
@@ -388,15 +496,7 @@ function renderFiles() {
             </div>
         `).join('');
 }
-//
-// function createTag(tag, fileIndex, type) {
-//     return `
-//             <span class="tag">
-//                 ${tag}
-//                 <button onclick="removeTag(${fileIndex}, '${type}', '${tag}')">&times;</button>
-//             </span>
-//         `;
-// }
+
 
 function getStatusIcon(status) {
     const icons = {
@@ -407,16 +507,6 @@ function getStatusIcon(status) {
     return icons[status] || '';
 }
 
-// function addTag(fileIndex, type, value) {
-//     if (!value || selectedFiles[fileIndex][type].includes(value)) return;
-//     selectedFiles[fileIndex][type].push(value);
-//     renderFiles();
-// }
-//
-// function removeTag(fileIndex, type, tag) {
-//     selectedFiles[fileIndex][type] = selectedFiles[fileIndex][type].filter(t => t !== tag);
-//     renderFiles();
-// }
 
 function showCancelConfirmation() {
     document.getElementById('confirmationOverlay').style.display = 'block';
@@ -445,44 +535,106 @@ function confirmUpload() {
 async function startUpload() {
     hideUploadConfirmation();
     document.getElementById('uploadButton').style.display = 'none';
+    let hasFailures = false;
+    let uploadResults = [];  // Store upload results
 
     for (let i = 0; i < selectedFiles.length; i++) {
         selectedFiles[i].status = 'loading';
-        renderFiles();
+        // displayFiles();
 
         const formData = new FormData();
         formData.append('file', selectedFiles[i].file);
+        formData.append('fileName', selectedFiles[i].fileName);
         formData.append('projects', JSON.stringify(selectedFiles[i].projects));
         formData.append('location', selectedFiles[i].location);
         formData.append('teams', JSON.stringify(selectedFiles[i].teams));
         formData.append('categories', JSON.stringify(selectedFiles[i].categories));
 
         try {
-            const response = await fetch('/upload/', {
+            const response = await fetch('/api/upload/', {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                 }
             });
 
-            if (response.ok) {
+            const result = await response.json();
+
+            if (response.ok && result.status === 'success') {
                 selectedFiles[i].status = 'success';
+                selectedFiles[i].fileId = result.fileId;
             } else {
                 selectedFiles[i].status = 'error';
+                selectedFiles[i].errorMessage = result.message || 'Upload failed';
+                hasFailures = true;
             }
         } catch (error) {
             selectedFiles[i].status = 'error';
+            selectedFiles[i].errorMessage = 'Network error';
+            hasFailures = true;
         }
 
-        renderFiles();
+        uploadResults.push({ ...selectedFiles[i] });  // Store the result
     }
 
-    const allCompleted = selectedFiles.every(file =>
-        file.status === 'success' || file.status === 'error'
-    );
+    // Replace selectedFiles with the results to avoid duplication
+    selectedFiles = uploadResults;
 
-    if (allCompleted) {
+    const allFailed = selectedFiles.every(file => file.status === 'error');
+
+    if (allFailed) {
+        showWarningModal('All uploads failed. Would you like to retry?');
+        document.getElementById('uploadButton').style.display = 'block';
+        document.getElementById('continueButton').style.display = 'none';
+    } else if (hasFailures) {
+        showWarningModal('Some uploads failed. You can continue or retry failed uploads.');
+        document.getElementById('continueButton').style.display = 'block';
+        document.getElementById('retryFailedButton').style.display = 'block';
+    } else {
         document.getElementById('continueButton').style.display = 'block';
     }
+
+    displayFiles();
 }
+
+// New function to handle retrying uploads
+function retryUpload() {
+    // Reset status for failed uploads
+    selectedFiles = selectedFiles.map(file => ({
+        ...file,
+        status: file.status === 'error' ? null : file.status,
+        errorMessage: file.status === 'error' ? null : file.errorMessage
+    }));
+
+    document.getElementById('continueButton').style.display = 'none';
+    document.getElementById('uploadButton').style.display = 'block';
+    document.getElementById('retryFailedButton').style.display = 'none';
+    displayFiles();
+}
+
+// Function to show warning modal
+// TODO: no aparece
+function showWarningModal(message) {
+    const warningModal = document.createElement('div');
+    warningModal.className = 'warning-modal';
+    warningModal.innerHTML = `
+        <div class="warning-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>${message}</p>
+            <div class="warning-actions">
+                <button onclick="hideWarningModal()" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(warningModal);
+}
+
+// Function to hide warning modal
+function hideWarningModal() {
+    const warningModal = document.querySelector('.warning-modal');
+    if (warningModal) {
+        warningModal.remove();
+    }
+}
+
