@@ -40,25 +40,27 @@ let folderStructure = {
 };
 
 function createFolder(path) {
-    let current = folderStructure.root;
-    const parts = path.split('/').filter(p => p);
-    let currentPath = '';
+    const pathParts = path.split('/');
+    let currentFolder = folderStructure.root;
 
-    for (const part of parts) {
-        if (part === current.name) continue; // Skip if it's the root name
+    console.log('pathParts', pathParts)
+    console.log('currentFolder', currentFolder)
 
-        currentPath = currentPath ? `${currentPath}/${part}` : part;
-
-        if (!current.children[part]) {
-            current.children[part] = {
-                name: part,
-                type: 'folder',
-                children: {}
-            };
+    // Navegar a la ubicación deseada
+    for (const part of pathParts) {
+        console.log('part', part)
+        if (!currentFolder.children[part]) {
+            currentFolder.children[part] = { children: {} }; // Crear nueva carpeta si no existe
+            console.log('currentFolder.children[part]', currentFolder.children[part])
         }
-        current = current.children[part];
+        currentFolder = currentFolder.children[part];
+        console.log('currentFolder', currentFolder)
     }
+
+    // Aquí puedes llamar a displayFiles() o renderizar la estructura actualizada
+    displayFiles();
 }
+
 
 
 function handleFileSelect(event) {
@@ -79,6 +81,7 @@ function handleFileSelect(event) {
 }
 
 async function displayFiles() {
+    console.log('DISPLAYING FILES')
     const fileList = document.getElementById('fileList');
     fileList.innerHTML = '';
 
@@ -237,10 +240,16 @@ async function displayFiles() {
 function generateFolderTree(folder, path, fileIndex, currentProject) {
     let tree = '';
 
-    // For the root level (empty path)
+    console.log('folder', folder)
+    console.log('path', path)
+    console.log('fileIndex', fileIndex)
+    console.log('currentProject', currentProject)
+
+    // Para la carpeta raíz
     if (path === '') {
-        // Use project name if selected, otherwise use 'Project Root'
         const rootName = currentProject === 'Project Root' ? 'Project Root' : currentProject;
+
+        console.log('rootName', rootName)
 
         tree = `
             <div class="folder-item active" onclick="updateLocation(${fileIndex}, '${rootName}')">
@@ -249,9 +258,11 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
             </div>
         `;
     } else {
-        // For subfolders, don't show if it's the same as the project name
+        // Para las subcarpetas
         const folderName = path.split('/').pop();
-        // Only show the folder if it's not the same as the current project
+
+        console.log('folderName', folderName)
+
         if (folderName !== currentProject) {
             tree = `
                 <div class="folder-item" onclick="updateLocation(${fileIndex}, '${path}')">
@@ -265,18 +276,22 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
         }
     }
 
-    // Show subfolders
-    const subfolders = Object.entries(folder.children)
-        .filter(([name]) => name !== currentProject) // Filter out project name from subfolders
-        .sort(([a], [b]) => a.localeCompare(b));
+    // Subcarpetas
+    if (folder && folder.children) {
+        const subfolders = Object.entries(folder.children)
+            .filter(([name]) => name !== currentProject) // Excluir el proyecto actual del árbol
+            .sort(([a], [b]) => a.localeCompare(b)); // Ordenar alfabéticamente
 
-    if (subfolders.length > 0) {
-        tree += '<div class="subfolder-container">';
-        for (const [name, content] of subfolders) {
-            const newPath = path ? `${path}/${name}` : name;
-            tree += generateFolderTree(content, newPath, fileIndex, currentProject);
+        console.log('subfolders', subfolders)
+
+        if (subfolders.length > 0) {
+            tree += '<div class="subfolder-container">';
+            for (const [name, content] of subfolders) {
+                const newPath = path ? `${path}/${name}` : name;
+                tree += generateFolderTree(content, newPath, fileIndex, currentProject);
+            }
+            tree += '</div>';
         }
-        tree += '</div>';
     }
 
     return tree;
@@ -327,9 +342,15 @@ function updateFileProject(fileIndex, projectName) {
             fileData.location = projectName + fileData.location.substring(oldProject.length);
         }
 
-        // Clear any old project folders from the structure
-        if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
-            delete folderStructure.root.children[oldProject];
+        // // Clear any old project folders from the structure
+        // if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
+        //     delete folderStructure.root.children[oldProject];
+        // }
+        if (oldProject && folderStructure.root.children[oldProject]) {
+            // Elimina la carpeta solo si no es el proyecto actual
+            if (oldProject !== projectName) {
+                delete folderStructure.root.children[oldProject];
+            }
         }
     } else {
         // Reset to default
@@ -395,7 +416,6 @@ function deleteFolderFromStructure(path) {
 }
 
 
-
 function showNewFolderDialog(fileIndex) {
     const folderName = prompt('Enter new folder name:');
     if (folderName && folderName.trim()) {
@@ -406,7 +426,7 @@ function showNewFolderDialog(fileIndex) {
 
         createFolder(newPath);
         selectedFiles[fileIndex].location = newPath;
-        displayFiles();
+        // displayFiles();
     }
 }
 
@@ -575,7 +595,7 @@ async function startUpload() {
             hasFailures = true;
         }
 
-        uploadResults.push({ ...selectedFiles[i] });  // Store the result
+        uploadResults.push({...selectedFiles[i]});  // Store the result
     }
 
     // Replace selectedFiles with the results to avoid duplication

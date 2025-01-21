@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 
-from .models import File, Project, Assignations, Membership
+from .models import File, Project, Assignations, Membership, Folder
 
 
 # @login_required
@@ -27,7 +27,7 @@ def homepageView(request):
     user_memberships = Membership.objects.filter(member=request.user.id)
     user_teams = [membership.user_team for membership in user_memberships]
 
-    user_projects = Assignations.objects.filter(assignated_team__in=user_teams)
+    user_projects = Assignations.objects.filter(assignated_team__in=user_teams, assignated_project__active=True)
     print(user_projects)
 
     context = {
@@ -71,7 +71,7 @@ def get_user_projects(request):
         user_teams = get_user_teams(request.user)
         user_assignations = Assignations.objects.filter(assignated_team__in=user_teams)
         user_projects = user_assignations.values('assignated_project') #[assignation.assignated_project for assignation in user_assignations]
-        projects = Project.objects.filter(pk__in=user_projects).values('pk', 'name')
+        projects = Project.objects.filter(pk__in=user_projects, active=True).values('pk', 'name')
 
         # projects = Project.objects.filter(users=request.user).values('id', 'name')
         return JsonResponse({'projects': list(projects)})
@@ -121,3 +121,45 @@ def upload_file(request):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+@login_required
+@require_http_methods(["GET"])
+def get_project_folders(request, project_name=None):
+    try:
+        # Query your database for folders
+        folders = []
+        if project_name:
+            # Get folders for specific project
+            folders = Folder.objects.filter(project__name=project_name)
+        else:
+            # Get root folders
+            folders = Folder.objects.filter(project__isnull=True)
+
+        # Convert to list of dicts with path and empty status
+        folder_list = [{
+            'path': folder.path,
+            'is_empty': not folder.files.exists()  # Assuming you have a related_name='files' on your File model
+        } for folder in folders]
+
+        return JsonResponse(folder_list, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def delete_folder(request):
+    try:
+        data = json.loads(request.body)
+        path = data.get('path')
+
+        folder = Folder.objects.get(path=path)
+
+        if folder.files.exists():
+            return JsonResponse({'message': 'Cannot delete folder: it contains files'}, status=400)
+
+        folder.delete()
+        return JsonResponse({'message': 'Folder deleted successfully'})
+    except Folder.DoesNotExist:
+        return JsonResponse({'message': 'Folder not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
