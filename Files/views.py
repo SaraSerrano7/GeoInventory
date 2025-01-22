@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 
-from .models import File, Project, Assignations, Membership, Folder
+from .models import File, Project, Assignations, Membership, Folder, Location, Access
 
 
 # @login_required
@@ -126,21 +126,31 @@ def upload_file(request):
 @require_http_methods(["GET"])
 def get_project_folders(request, project_name=None):
     try:
-        # Query your database for folders
-        folders = []
+        locations = []
         if project_name:
-            # Get folders for specific project
-            folders = Folder.objects.filter(project__name=project_name)
+
+            # nota: para haber obtenido un project name, ya se ha seleccionado de una lista de proyectos activos
+            project_locations = Location.objects.filter(located_project__name=project_name)
+            for location in project_locations:
+                file = location.located_file
+                if file:
+                    accessible = Access.objects.filter(accessed_file=file, accessing_team__membership__member=request.user.id)
+                    if accessible:
+                        locations.append(location)
+                # folders = Folder.objects.filter(project__name=project_name)
+
         else:
             # Get root folders
-            folders = Folder.objects.filter(project__isnull=True)
+            # TODO simplificacion: si no hay project name, son ficheros 'sin clasificar'
+            locations = Folder.objects.filter(project__isnull=True)
 
         # Convert to list of dicts with path and empty status
         folder_list = [{
-            'path': folder.path,
-            'is_empty': not folder.files.exists()  # Assuming you have a related_name='files' on your File model
-        } for folder in folders]
+            'path': location.located_folder.path,
+            'is_empty': location.located_file is None  # Assuming you have a related_name='files' on your File model
+        } for location in locations]
 
+        print(folder_list)
         return JsonResponse(folder_list, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

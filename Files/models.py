@@ -177,7 +177,7 @@ class Folder(DigitalResource):
         """
         Returns the folder's name
         """
-        return f"{self.parent}/{self.name}" if self.parent else self.name
+        return f"{self.parent}/{self.name}" if self.parent else str(self.name)
 
     @property
     def path(self):
@@ -193,10 +193,11 @@ class Location(DigitalResource):
     """
     Class to represent a file location under a project file system
     """
+    # TODO el path este no deberia estar en folder realmente???
     located_file = models.ForeignKey(
-        File, default='deleted file', on_delete=models.SET_DEFAULT)
+        File, default='deleted file', on_delete=models.SET_DEFAULT, null=True, blank=True)
     located_project = models.ForeignKey(
-        Project, default='deleted project', on_delete=models.SET_DEFAULT)
+        Project, default='deleted project', on_delete=models.SET_DEFAULT, null=True, blank=True)
     located_folder = models.ForeignKey(
         Folder, on_delete=models.SET_NULL, null=True, blank=True)
     # info = models.ManyToManyField(DigitalResource, related_name='location_info')
@@ -205,12 +206,13 @@ class Location(DigitalResource):
 
     def save(self, *args, **kwargs):
         # Build the full path dynamically
-        folder_path = self.located_folder.name if self.located_folder else ""
-        self.path = f"{folder_path}/{self.located_file.name}".lstrip('/')
+        folder_path = self.located_folder.path if self.located_folder else ""
+        self.path = f"{folder_path}/{self.located_file.name}".lstrip('/') if self.located_file else f"{folder_path}"
+        # todo dudo que esto sea necesario
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return str(self.path)
+        return f"{self.located_project} - {self.path}"
 
 
 ###############

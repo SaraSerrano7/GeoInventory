@@ -5,7 +5,7 @@ Accessible Files' classes at django admin panel
 from django.contrib import admin
 
 from Files.models import DigitalResource, Team, Role, Membership, Project, Assignations, \
-    File, Access, Location, Category
+    File, Access, Location, Category, Folder
 
 # Register your models here.
 
@@ -18,4 +18,5 @@ admin.site.register(Assignations)
 admin.site.register(File)
 admin.site.register(Access)
 admin.site.register(Location)
+admin.site.register(Folder)
 admin.site.register(Category)

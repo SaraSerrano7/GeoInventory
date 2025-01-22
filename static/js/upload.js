@@ -35,32 +35,70 @@ let folderStructure = {
     root: {
         name: 'Project Root',
         type: 'folder',
-        children: {}
+        children: {},
+        isEmpty: true
     }
 };
+
+async function fetchProjectFolders(projectName) {
+    try {
+        const response = await fetch(`/api/project_folders/${projectName || ''}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch folders');
+        }
+
+        const folders = await response.json();
+        return folders;
+    } catch (error) {
+        console.error('Error fetching folders:', error);
+        return [];
+    }
+}
+
+// Function to merge backend folders with current structure
+function mergeFolderStructures(existingFolders) {
+    existingFolders.forEach(folder => {
+        const pathParts = folder.path.split('/').filter(p => p);
+        let current = folderStructure.root;
+        let currentPath = '';
+
+        pathParts.forEach(part => {
+            currentPath = currentPath ? `${currentPath}/${part}` : part;
+            if (!current.children[part]) {
+                current.children[part] = {
+                    name: part,
+                    type: 'folder',
+                    children: {},
+                    isEmpty: folder.is_empty,
+                    isExisting: true // Flag to identify folders from backend
+                };
+            }
+            current = current.children[part];
+        });
+    });
+}
 
 function createFolder(path) {
     const pathParts = path.split('/');
     let currentFolder = folderStructure.root;
 
-    console.log('pathParts', pathParts)
-    console.log('currentFolder', currentFolder)
-
     // Navegar a la ubicación deseada
     for (const part of pathParts) {
-        console.log('part', part)
         if (!currentFolder.children[part]) {
-            currentFolder.children[part] = { children: {} }; // Crear nueva carpeta si no existe
-            console.log('currentFolder.children[part]', currentFolder.children[part])
+            currentFolder.children[part] = {children: {}}; // Crear nueva carpeta si no existe
         }
         currentFolder = currentFolder.children[part];
-        console.log('currentFolder', currentFolder)
     }
 
     // Aquí puedes llamar a displayFiles() o renderizar la estructura actualizada
     displayFiles();
 }
-
 
 
 function handleFileSelect(event) {
@@ -81,7 +119,6 @@ function handleFileSelect(event) {
 }
 
 async function displayFiles() {
-    console.log('DISPLAYING FILES')
     const fileList = document.getElementById('fileList');
     fileList.innerHTML = '';
 
@@ -240,16 +277,9 @@ async function displayFiles() {
 function generateFolderTree(folder, path, fileIndex, currentProject) {
     let tree = '';
 
-    console.log('folder', folder)
-    console.log('path', path)
-    console.log('fileIndex', fileIndex)
-    console.log('currentProject', currentProject)
-
     // Para la carpeta raíz
     if (path === '') {
         const rootName = currentProject === 'Project Root' ? 'Project Root' : currentProject;
-
-        console.log('rootName', rootName)
 
         tree = `
             <div class="folder-item active" onclick="updateLocation(${fileIndex}, '${rootName}')">
@@ -261,16 +291,18 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
         // Para las subcarpetas
         const folderName = path.split('/').pop();
 
-        console.log('folderName', folderName)
-
         if (folderName !== currentProject) {
             tree = `
                 <div class="folder-item" onclick="updateLocation(${fileIndex}, '${path}')">
                     <i class="fas fa-folder"></i>
                     <span>${folderName}</span>
-                    <button onclick="deleteFolder('${path}', ${fileIndex})" class="delete-folder-btn" title="Delete folder">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    ${folder.isEmpty ? `
+                        <button onclick="deleteFolder('${path}', ${fileIndex})" 
+                                class="delete-folder-btn" 
+                                title="Delete folder">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : ''}
                 </div>
             `;
         }
@@ -281,8 +313,6 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
         const subfolders = Object.entries(folder.children)
             .filter(([name]) => name !== currentProject) // Excluir el proyecto actual del árbol
             .sort(([a], [b]) => a.localeCompare(b)); // Ordenar alfabéticamente
-
-        console.log('subfolders', subfolders)
 
         if (subfolders.length > 0) {
             tree += '<div class="subfolder-container">';
@@ -326,13 +356,27 @@ function updateFileName(fileIndex, newName) {
 //     displayFiles();
 // }
 
-function updateFileProject(fileIndex, projectName) {
+async function updateFileProject(fileIndex, projectName) {
     const fileData = selectedFiles[fileIndex];
     const oldProject = fileData.projects[0];
 
     if (projectName) {
         // Update this file's project
         fileData.projects = [projectName];
+
+        const existingFolders = await fetchProjectFolders(projectName);
+        console.log('existingFolders', existingFolders)
+
+        folderStructure = {
+            root: {
+                name: projectName,
+                type: 'folder',
+                children: {},
+                isEmpty: true
+            }
+        };
+        mergeFolderStructures(existingFolders);
+
 
         // Update location to new project root
         if (fileData.location === 'Project Root' || fileData.location === oldProject) {
@@ -355,6 +399,15 @@ function updateFileProject(fileIndex, projectName) {
     } else {
         // Reset to default
         fileData.projects = [];
+        folderStructure = {
+            root: {
+                name: 'Project Root',
+                type: 'folder',
+                children: {},
+                isEmpty: true
+            }
+        };
+
         if (fileData.location === oldProject) {
             fileData.location = 'Project Root';
         } else if (fileData.location.startsWith(oldProject + '/')) {
