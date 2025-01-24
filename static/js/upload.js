@@ -90,20 +90,27 @@ function createFolder(path) {
     const pathParts = path.split('/');
     console.log('pathParts', pathParts)
     let currentFolder = folderStructure.root;
+    console.log('folderStructure.root', folderStructure.root)
     console.log('currentFolder', currentFolder)
     // Navegar a la ubicación deseada
     for (const part of pathParts) {
         console.log('part', part)
         console.log('currentFolder', currentFolder)
         if (!currentFolder.children[part]) {
-            console.log('if')
-            currentFolder.children[part] = {children: {}, isEmpty: true}; // Crear nueva carpeta si no existe
-            console.log('currentFolder', currentFolder)
+            // no existe la carpeta
+            if (currentFolder.name === part) {
+               continue
+            } else {
+                console.log('if', !currentFolder.children[part], currentFolder.children[part])
+                currentFolder.children[part] = {children: {}, isEmpty: true}; // Crear nueva carpeta si no existe
+                console.log('currentFolder', currentFolder)
+            }
+
         }
         currentFolder = currentFolder.children[part];
     }
 
-    console.log('nueva carpeta', currentFolder)
+    console.log('nueva carpeta', folderStructure)
 
     // Aquí puedes llamar a displayFiles() o renderizar la estructura actualizada
     displayFiles();
