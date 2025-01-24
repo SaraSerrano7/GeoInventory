@@ -85,16 +85,25 @@ function mergeFolderStructures(existingFolders) {
 }
 
 function createFolder(path) {
-    const pathParts = path.split('/');
-    let currentFolder = folderStructure.root;
 
+    console.log('path', path)
+    const pathParts = path.split('/');
+    console.log('pathParts', pathParts)
+    let currentFolder = folderStructure.root;
+    console.log('currentFolder', currentFolder)
     // Navegar a la ubicación deseada
     for (const part of pathParts) {
+        console.log('part', part)
+        console.log('currentFolder', currentFolder)
         if (!currentFolder.children[part]) {
-            currentFolder.children[part] = {children: {}}; // Crear nueva carpeta si no existe
+            console.log('if')
+            currentFolder.children[part] = {children: {}, isEmpty: true}; // Crear nueva carpeta si no existe
+            console.log('currentFolder', currentFolder)
         }
         currentFolder = currentFolder.children[part];
     }
+
+    console.log('nueva carpeta', currentFolder)
 
     // Aquí puedes llamar a displayFiles() o renderizar la estructura actualizada
     displayFiles();
@@ -119,6 +128,7 @@ function handleFileSelect(event) {
 }
 
 async function displayFiles() {
+    console.log('displaying files')
     const fileList = document.getElementById('fileList');
     fileList.innerHTML = '';
 
@@ -208,7 +218,6 @@ async function displayFiles() {
                 </div>
             </div>
         `;
-
         fileList.appendChild(fileItem);
     });
 }
@@ -276,7 +285,6 @@ async function displayFiles() {
 
 function generateFolderTree(folder, path, fileIndex, currentProject) {
     let tree = '';
-
     // Para la carpeta raíz
     if (path === '') {
         const rootName = currentProject === 'Project Root' ? 'Project Root' : currentProject;
@@ -332,6 +340,7 @@ function updateFileName(fileIndex, newName) {
 }
 
 // function updateFileProject(fileIndex, projectName) {
+console.log('no existo')
 //     const fileData = selectedFiles[fileIndex];
 //     const oldProject = fileData.projects[0];
 //
@@ -359,14 +368,13 @@ function updateFileName(fileIndex, newName) {
 async function updateFileProject(fileIndex, projectName) {
     const fileData = selectedFiles[fileIndex];
     const oldProject = fileData.projects[0];
-
+    console.log('project name', projectName)
     if (projectName) {
         // Update this file's project
         fileData.projects = [projectName];
 
         const existingFolders = await fetchProjectFolders(projectName);
         console.log('existingFolders', existingFolders)
-
         folderStructure = {
             root: {
                 name: projectName,
@@ -420,7 +428,7 @@ async function updateFileProject(fileIndex, projectName) {
         }
     }
 
-    displayFiles();
+    await displayFiles();
 }
 
 function deleteFolder(path, fileIndex) {
@@ -479,6 +487,9 @@ function showNewFolderDialog(fileIndex) {
 
         createFolder(newPath);
         selectedFiles[fileIndex].location = newPath;
+
+        console.log(selectedFiles)
+
         // displayFiles();
     }
 }
