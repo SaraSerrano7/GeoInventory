@@ -347,7 +347,6 @@ function updateFileName(fileIndex, newName) {
 }
 
 // function updateFileProject(fileIndex, projectName) {
-console.log('no existo')
 //     const fileData = selectedFiles[fileIndex];
 //     const oldProject = fileData.projects[0];
 //
@@ -376,6 +375,8 @@ async function updateFileProject(fileIndex, projectName) {
     const fileData = selectedFiles[fileIndex];
     const oldProject = fileData.projects[0];
     console.log('project name', projectName)
+
+
     if (projectName) {
         // Update this file's project
         fileData.projects = [projectName];
@@ -412,6 +413,7 @@ async function updateFileProject(fileIndex, projectName) {
             }
         }
     } else {
+        console.log('file project', projectName)
         // Reset to default
         fileData.projects = [];
         folderStructure = {
@@ -427,7 +429,11 @@ async function updateFileProject(fileIndex, projectName) {
             fileData.location = 'Project Root';
         } else if (fileData.location.startsWith(oldProject + '/')) {
             fileData.location = 'Project Root' + fileData.location.substring(oldProject.length);
+        } else {
+            fileData.location = 'Project Root'
         }
+
+        console.log('new location', fileData.location)
 
         // Clean up any project-named folders
         if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
@@ -502,6 +508,10 @@ function showNewFolderDialog(fileIndex) {
 }
 
 function updateLocation(fileIndex, newLocation) {
+    console.log('fileIndex', fileIndex)
+    console.log('newLocation', newLocation)
+    console.log('selectedFiles', selectedFiles)
+
     selectedFiles[fileIndex].location = newLocation;
     displayFiles();
 }
