@@ -11,7 +11,8 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 
-from .models import File, Project, Assignations, Membership, Folder, Location, Access
+from Management.models import GlobalMembership
+from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team
 
 
 # @login_required
@@ -56,9 +57,16 @@ def uploadFilesView(request):
     return render(request, 'Files/upload_files/upload_files.html')
 
 
-def get_user_teams(user: User):
-    user_membership = Membership.objects.filter(member=user.id)
+def find_user_teams(user: User):
+    # TODO si eres superadmin debes poder elegir cualquier proyecto
+
+    user_membership = Membership.objects.filter(member=user)
     user_teams = [membership.user_team for membership in user_membership]
+    return user_teams
+
+
+def query_user_teams(user: User):
+    user_teams = Team.objects.filter(membership__member=user)
     return user_teams
 
 
@@ -68,13 +76,38 @@ def get_user_projects(request):
     try:
         # Get projects accessible to the current user
 
-        user_teams = get_user_teams(request.user)
-        user_assignations = Assignations.objects.filter(assignated_team__in=user_teams)
-        user_projects = user_assignations.values('assignated_project') #[assignation.assignated_project for assignation in user_assignations]
-        projects = Project.objects.filter(pk__in=user_projects, active=True).values('pk', 'name')
+        # TODO si eres super admin puedes ver todos los proyectos activos
+        user_global_role = GlobalMembership.objects.get(related_user=request.user.id)
+        if user_global_role.user_type.name == 'superadmin':
+            projects = Project.objects.filter(active=True).values('pk', 'name')
+        else:
+            user_teams = find_user_teams(request.user)
+            user_assignations = Assignations.objects.filter(assignated_team__in=user_teams)
+            user_projects = user_assignations.values(
+                'assignated_project')  # [assignation.assignated_project for assignation in user_assignations]
+            projects = Project.objects.filter(pk__in=user_projects, active=True).values('pk', 'name')
 
         # projects = Project.objects.filter(users=request.user).values('id', 'name')
         return JsonResponse({'projects': list(projects)})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_user_teams(request, project_name=None):
+    try:
+        print('wtf bro')
+        # Get teams where current user is member
+        # TODO si eres superadmin deberias tener todos los teams del proyecto
+        # TODO si en el proyecto seleccionado eres admin, puedes seleccionar a cualquier equipo asignado al proyecto
+
+        current_user = request.user
+        print(current_user)
+        user_teams = query_user_teams(request.user).values('name')
+
+        # projects = Project.objects.filter(users=request.user).values('id', 'name')
+        return JsonResponse({'teams': list(user_teams)})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -122,6 +155,7 @@ def upload_file(request):
             'message': str(e)
         }, status=500)
 
+
 @login_required
 @require_http_methods(["GET"])
 def get_project_folders(request, project_name=None):
@@ -134,7 +168,8 @@ def get_project_folders(request, project_name=None):
             for location in project_locations:
                 file = location.located_file
                 if file:
-                    accessible = Access.objects.filter(accessed_file=file, accessing_team__membership__member=request.user.id)
+                    accessible = Access.objects.filter(accessed_file=file,
+                                                       accessing_team__membership__member=request.user.id)
                     if accessible:
                         locations.append(location)
                 # folders = Folder.objects.filter(project__name=project_name)
@@ -154,6 +189,7 @@ def get_project_folders(request, project_name=None):
         return JsonResponse(folder_list, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 @login_required
 @require_http_methods(["POST"])

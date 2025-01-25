@@ -18,6 +18,76 @@ async function fetchUserProjects() {
     }
 }
 
+async function fetchUserTeams(projectName) {
+    try {
+        const response = await fetch('/api/user_teams/${projectName}', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch teams');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching teams:', error);
+        return [];
+    }
+}
+
+async function updateFileTeams(fileIndex, projectName) {
+    try {
+        const response = await fetch(`/api/user_teams/${projectName}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        console.log('response', response)
+        if (!response.ok) {
+            throw new Error('Failed to fetch teams');
+        }
+
+        const teams = await response.json();
+
+        console.log(`teams-${fileIndex}`)
+        const findteamSelect = document.getElementById(`teams-${fileIndex}`)
+        console.log(findteamSelect)
+
+        const teamSelect = document.getElementById(`teams-${fileIndex}`).querySelector('select');
+
+        console.log('teamSelect', teamSelect)
+        console.log('fileIndex', fileIndex)
+
+        console.log(Array.isArray(teams))
+        console.log(Array.isArray(teams.teams))
+
+        // teamSelect.innerHTML = '<option value="">Select team</option>'; // Reset options
+        console.log('teams', teams)
+        console.log('teams', teams.teams)
+        teams.teams.forEach(team => {
+            console.log('team:', team)
+            console.log('team name', team.name)
+            const option = document.createElement('option');
+            console.log('option', option)
+            option.value = team.name;
+            option.textContent = team.name;
+            console.log('option', option)
+            findteamSelect.appendChild(option);
+            console.log('Updated options:', findteamSelect.innerHTML);
+        });
+
+    } catch (error) {
+        console.error('Error fetching teams for project:', error);
+    }
+
+
+    await displayFiles();
+}
+
 
 function openUploadModal(event) {
     event.preventDefault();
@@ -99,7 +169,7 @@ function createFolder(path) {
         if (!currentFolder.children[part]) {
             // no existe la carpeta
             if (currentFolder.name === part) {
-               continue
+                continue
             } else {
                 console.log('if', !currentFolder.children[part], currentFolder.children[part])
                 currentFolder.children[part] = {children: {}, isEmpty: true}; // Crear nueva carpeta si no existe
@@ -141,6 +211,7 @@ async function displayFiles() {
 
     // Fetch user's projects
     const userProjects = await fetchUserProjects();
+    // const userTeams = await fetchUserTeams();
 
     selectedFiles.forEach((fileData, index) => {
         const fileItem = document.createElement('div');
@@ -201,11 +272,8 @@ async function displayFiles() {
 
             <div class="select-group">
                 <label>Teams</label>
-                <select onchange="addTag(${index}, 'teams', this.value)">
+                <select id="teams-${index}" onchange="addTag(${index}, 'teams', this.value)">
                     <option value="">Select team</option>
-                    {% for team in teams %}
-                        <option value="{{ team.name }}">{{ team.name }}</option>
-                    {% endfor %}
                 </select>
                 <div class="tag-container" id="teams-${index}">
                     ${fileData.teams.map(tag => createTag(tag, index, 'teams')).join('')}
@@ -412,6 +480,12 @@ async function updateFileProject(fileIndex, projectName) {
                 delete folderStructure.root.children[oldProject];
             }
         }
+
+        // const userTeams = await fetchUserTeams(projectName);
+        // updateTeamsDropdown(fileIndex, userTeams);
+        await updateFileTeams(fileIndex, projectName);
+
+
     } else {
         console.log('file project', projectName)
         // Reset to default
@@ -442,6 +516,18 @@ async function updateFileProject(fileIndex, projectName) {
     }
 
     await displayFiles();
+}
+
+function updateTeamsDropdown(fileIndex, teams) {
+    const selectElement = document.getElementById(`teams-select-${fileIndex}`);
+    selectElement.innerHTML = '<option value="">Select team</option>';
+
+    teams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team.name;
+        option.textContent = team.name;
+        selectElement.appendChild(option);
+    });
 }
 
 function deleteFolder(path, fileIndex) {
