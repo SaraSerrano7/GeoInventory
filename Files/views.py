@@ -12,7 +12,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 
 from Management.models import GlobalMembership, GlobalRole
-from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, ROLES_CHOICES, Role
+from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, Classification
 
 
 # @login_required
@@ -125,6 +125,17 @@ def get_user_teams(request, project_name=None):
 
         # projects = Project.objects.filter(users=request.user).values('id', 'name')
         return JsonResponse({'teams': list(user_teams)})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_categories(request):
+    try:
+        # categories = query_user_teams(request.user).values('name')
+        categories = Category.objects.all().values('label')
+        return JsonResponse({'categories': list(categories)})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 

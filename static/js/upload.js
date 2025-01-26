@@ -18,26 +18,6 @@ async function fetchUserProjects() {
     }
 }
 
-async function fetchUserTeams(projectName) {
-    try {
-        const response = await fetch('/api/user_teams/${projectName}', {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch teams');
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching teams:', error);
-        return [];
-    }
-}
-
 async function updateFileTeams(fileIndex, projectName) {
     try {
         const response = await fetch(`/api/user_teams/${projectName}`, {
@@ -63,6 +43,39 @@ async function updateFileTeams(fileIndex, projectName) {
             option.value = team.name;
             option.text = team.name;
             teamSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function updateFileCategory(fileIndex) {
+    try {
+        const response = await fetch(`/api/categories/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+
+        const categories = await response.json();
+        console.log('categories', categories)
+
+        const categorySelect = document.querySelector(`select[id="categories-${fileIndex}"]`);
+
+        if (!categorySelect) {
+            console.error('Select element not found');
+            return;
+        }
+
+        categorySelect.innerHTML = '<option value="">Select category</option>';
+
+        categories.categories.forEach(cateogry => {
+            const option = document.createElement('option');
+            option.value = cateogry.label;
+            option.text = cateogry.label;
+            categorySelect.appendChild(option);
         });
 
     } catch (error) {
@@ -264,11 +277,9 @@ async function displayFiles() {
 
             <div class="select-group">
                 <label>Categories</label>
-                <select onchange="addTag(${index}, 'categories', this.value)">
+                <select id="categories-${index}" onchange="addTag(${index}, 'categories', this.value)">
                     <option value="">Select category</option>
-                    {% for category in categories %}
-                        <option value="{{ category.name }}">{{ category.name }}</option>
-                    {% endfor %}
+                    
                 </select>
                 <div class="tag-container" id="categories-${index}">
                     ${fileData.categories.map(tag => createTag(tag, index, 'categories')).join('')}
@@ -279,6 +290,7 @@ async function displayFiles() {
 
         if(currentProject !== 'Project Root') {
             updateFileTeams(index, currentProject)
+            updateFileCategory(index)
         }
 
 
@@ -300,21 +312,12 @@ function generateFolderTree(fileData, path, fileIndex) {
         };
     }
 
-    console.log('root', fileData)
     const folder = fileData.folderStructure.root;
     const currentProject = fileData.projects[0] || 'Project Root';
-
-
-
-    console.log('folder', folder)
-    console.log('path', path)
-    console.log('fileIndex', fileIndex)
-    console.log('currentProject', currentProject)
 
     let tree = '';
     // Para la carpeta raíz
     if (path === '') {
-        console.log('carpeta raiz')
         const rootName = currentProject === 'Project Root' ? 'Project Root' : currentProject;
 
         tree = `
@@ -324,12 +327,8 @@ function generateFolderTree(fileData, path, fileIndex) {
             </div>
         `;
     } else {
-        console.log('subcarpetas')
         // Para las subcarpetas
         const folderName = path.split('/').pop();
-
-        console.log('folderName', folderName)
-        console.log('currentProject', currentProject)
 
         if (folderName !== currentProject) {
             tree = `
@@ -348,24 +347,14 @@ function generateFolderTree(fileData, path, fileIndex) {
         }
     }
 
-    console.log('generating treee for', currentProject)
     if (currentProject === 'Project Root') {
         return tree
     }
-
-    console.log('subcarpetas 2')
-    console.log('folder', folder)
-    console.log('folder.children', folder.children)
-    console.log('if', folder && folder.children)
-
     // Subcarpetas
     if (folder && folder.children) {
         const subfolders = Object.entries(folder.children)
             .filter(([name]) => name !== currentProject) // Excluir el proyecto actual del árbol
             .sort(([a], [b]) => a.localeCompare(b)); // Ordenar alfabéticamente
-
-        console.log('subfolders', subfolders)
-        console.log('subfolders.length', subfolders.length)
 
         if (subfolders.length > 0) {
             tree += '<div class="subfolder-container">';
@@ -387,8 +376,6 @@ function generateFolderTree(fileData, path, fileIndex) {
             tree += '</div>';
         }
     }
-
-    console.log('tree', tree)
 
     return tree;
 }

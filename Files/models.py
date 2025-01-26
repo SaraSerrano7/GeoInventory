@@ -218,16 +218,22 @@ class Location(DigitalResource):
 ###############
 
 class Category(DigitalResource):
+    label = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return str(self.label)
+
+
+class Classification(DigitalResource):
     """
     Represents different types of classification for files
     """
     related_file = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, blank=True)
-    label = models.CharField(max_length=50)
-
+    category_name = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     # info = models.ManyToManyField(DigitalResource, related_name='category_info')
 
     def __str__(self):
-        return str(self.label)
+        return f"{self.related_file} - {self.category_name.label}"
 
 
 ###############
