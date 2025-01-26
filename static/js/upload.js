@@ -254,7 +254,7 @@ async function displayFiles() {
                     
                 </div>
                 <div class="location-controls">
-                    <button onclick="showNewFolderDialog(${index})" class="btn btn-secondary">
+                    <button id="newFolder-${index}" onclick="showNewFolderDialog(${index})" class="btn btn-secondary">
                         <i class="fas fa-folder-plus"></i> New Folder Here
                     </button>
                 </div>
@@ -291,6 +291,9 @@ async function displayFiles() {
         if(currentProject !== 'Project Root') {
             updateFileTeams(index, currentProject)
             updateFileCategory(index)
+        } else {
+            const newFolderDiv = document.querySelector(`button[id="newFolder-${index}"]`);
+            newFolderDiv.style.display = "none";
         }
 
 
@@ -393,14 +396,6 @@ async function updateFileProject(fileIndex, projectName) {
         fileData.projects = [projectName];
 
         const existingFolders = await fetchProjectFolders(projectName);
-        // folderStructure = {
-        //     root: {
-        //         name: projectName,
-        //         type: 'folder',
-        //         children: {},
-        //         isEmpty: true
-        //     }
-        // };
 
         fileData.folderStructure = {
             root: {
@@ -422,18 +417,6 @@ async function updateFileProject(fileIndex, projectName) {
             fileData.location = projectName + fileData.location.substring(oldProject.length);
         }
 
-
-        // if (oldProject && folderStructure.root.children[oldProject]) {
-        //     // Elimina la carpeta solo si no es el proyecto actual
-        //     if (oldProject !== projectName) {
-        //         delete folderStructure.root.children[oldProject];
-        //     }
-        // }
-
-        // TODO creo que esto sobra
-        // await updateFileTeams(fileIndex, projectName);
-
-
     } else {
         // Reset to default
         fileData.projects = [];
@@ -454,10 +437,6 @@ async function updateFileProject(fileIndex, projectName) {
             fileData.location = 'Project Root'
         }
 
-        // // Clean up any project-named folders
-        // if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
-        //     delete folderStructure.root.children[oldProject];
-        // }
     }
 
     await displayFiles();
