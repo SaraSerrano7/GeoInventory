@@ -113,10 +113,10 @@ async function fetchProjectFolders(projectName) {
 }
 
 // Function to merge backend folders with current structure
-function mergeFolderStructures(existingFolders) {
+function mergeFolderStructures(existingFolders, fileStructure) {
     existingFolders.forEach(folder => {
         const pathParts = folder.path.split('/').filter(p => p);
-        let current = folderStructure.root;
+        let current = fileStructure.root;
         let currentPath = '';
 
         pathParts.forEach(part => {
@@ -135,10 +135,12 @@ function mergeFolderStructures(existingFolders) {
     });
 }
 
-function createFolder(path) {
+function createFolder(path, fileIndex) {
+
+    const fileData = selectedFiles[fileIndex];
 
     const pathParts = path.split('/');
-    let currentFolder = folderStructure.root;
+    let currentFolder = fileData.folderStructure.root;
     // Navegar a la ubicación deseada
     for (const part of pathParts) {
         if (!currentFolder.children[part]) {
@@ -146,7 +148,12 @@ function createFolder(path) {
             if (currentFolder.name === part) {
                 continue
             } else {
-                currentFolder.children[part] = {children: {}, isEmpty: true}; // Crear nueva carpeta si no existe
+                currentFolder.children[part] = {
+                    name: part,
+                    type: 'folder',
+                    children: {},
+                    isEmpty: true
+                }; // Crear nueva carpeta si no existe
             }
 
         }
@@ -230,7 +237,8 @@ async function displayFiles() {
             <div class="select-group">
                 <label>Location</label>
                 <div class="folder-tree">
-                    ${generateFolderTree(folderStructure.root, '', index, currentProject)}
+                   ${generateFolderTree(fileData, '', index)}
+                    
                 </div>
                 <div class="location-controls">
                     <button onclick="showNewFolderDialog(${index})" class="btn btn-secondary">
@@ -277,7 +285,26 @@ async function displayFiles() {
     });
 }
 
-function generateFolderTree(folder, path, fileIndex, currentProject) {
+// function generateFolderTree(folder, path, fileIndex, currentProject) {
+
+function generateFolderTree(fileData, path, fileIndex) {
+
+     if (!fileData.folderStructure) {
+        fileData.folderStructure = {
+            root: {
+                name: 'Project Root',
+                type: 'folder',
+                children: {},
+                isEmpty: true
+            }
+        };
+    }
+
+    console.log('root', fileData)
+    const folder = fileData.folderStructure.root;
+    const currentProject = fileData.projects[0] || 'Project Root';
+
+
 
     console.log('folder', folder)
     console.log('path', path)
@@ -309,7 +336,7 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
                 <div class="folder-item" onclick="updateLocation(${fileIndex}, '${path}')">
                     <i class="fas fa-folder"></i>
                     <span>${folderName}</span>
-                    ${folder.isEmpty ? `
+                    ${folder.children[folderName]?.isEmpty ? `
                         <button onclick="deleteFolder('${path}', ${fileIndex})" 
                                 class="delete-folder-btn" 
                                 title="Delete folder">
@@ -342,9 +369,20 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
 
         if (subfolders.length > 0) {
             tree += '<div class="subfolder-container">';
-            for (const [name, content] of subfolders) {
+            for (const [name, folderContent] of subfolders) {
                 const newPath = path ? `${path}/${name}` : name;
-                tree += generateFolderTree(content, newPath, fileIndex, currentProject);
+                // tree += generateFolderTree(content, newPath, fileIndex, currentProject);
+                tree += generateFolderTree(
+                    {
+                        ...fileData,
+                        folderStructure: {
+                            root: folderContent
+                        }
+                    },
+                    newPath,
+                    fileIndex
+                );
+
             }
             tree += '</div>';
         }
@@ -368,7 +406,16 @@ async function updateFileProject(fileIndex, projectName) {
         fileData.projects = [projectName];
 
         const existingFolders = await fetchProjectFolders(projectName);
-        folderStructure = {
+        // folderStructure = {
+        //     root: {
+        //         name: projectName,
+        //         type: 'folder',
+        //         children: {},
+        //         isEmpty: true
+        //     }
+        // };
+
+        fileData.folderStructure = {
             root: {
                 name: projectName,
                 type: 'folder',
@@ -376,7 +423,8 @@ async function updateFileProject(fileIndex, projectName) {
                 isEmpty: true
             }
         };
-        mergeFolderStructures(existingFolders);
+
+        mergeFolderStructures(existingFolders, fileData.folderStructure);
 
 
         // Update location to new project root
@@ -388,20 +436,21 @@ async function updateFileProject(fileIndex, projectName) {
         }
 
 
-        if (oldProject && folderStructure.root.children[oldProject]) {
-            // Elimina la carpeta solo si no es el proyecto actual
-            if (oldProject !== projectName) {
-                delete folderStructure.root.children[oldProject];
-            }
-        }
+        // if (oldProject && folderStructure.root.children[oldProject]) {
+        //     // Elimina la carpeta solo si no es el proyecto actual
+        //     if (oldProject !== projectName) {
+        //         delete folderStructure.root.children[oldProject];
+        //     }
+        // }
 
-        await updateFileTeams(fileIndex, projectName);
+        // TODO creo que esto sobra
+        // await updateFileTeams(fileIndex, projectName);
 
 
     } else {
         // Reset to default
         fileData.projects = [];
-        folderStructure = {
+        fileData.folderStructure = {
             root: {
                 name: 'Project Root',
                 type: 'folder',
@@ -418,10 +467,10 @@ async function updateFileProject(fileIndex, projectName) {
             fileData.location = 'Project Root'
         }
 
-        // Clean up any project-named folders
-        if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
-            delete folderStructure.root.children[oldProject];
-        }
+        // // Clean up any project-named folders
+        // if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
+        //     delete folderStructure.root.children[oldProject];
+        // }
     }
 
     await displayFiles();
@@ -429,16 +478,18 @@ async function updateFileProject(fileIndex, projectName) {
 
 function deleteFolder(path, fileIndex) {
     event.stopPropagation(); // Prevent folder selection when clicking delete
+    const fileData = selectedFiles[fileIndex];
+
 
     // Check if folder is empty
-    const folder = getFolderByPath(path);
+    const folder = getFolderByPath(fileData.folderStructure.root, path);
     if (folder && Object.keys(folder.children).length === 0) {
         // Check if any files are using this location
         const filesInFolder = selectedFiles.some(file =>
             file.location === path || file.location.startsWith(path + '/'));
 
         if (!filesInFolder) {
-            deleteFolderFromStructure(path);
+            deleteFolderFromStructure(fileData, path);
             displayFiles();
         } else {
             alert('Cannot delete folder: it contains files');
@@ -448,9 +499,9 @@ function deleteFolder(path, fileIndex) {
     }
 }
 
-function getFolderByPath(path) {
+function getFolderByPath(folder, path) {
 
-    let current = folderStructure.root;
+    let current = folder;
     const parts = path.split('/');
 
     for (const part of parts) {
@@ -460,10 +511,10 @@ function getFolderByPath(path) {
     return current;
 }
 
-function deleteFolderFromStructure(path) {
+function deleteFolderFromStructure(fileData, path) {
     const parts = path.split('/');
     const folderName = parts.pop();
-    let current = folderStructure.root;
+    let current = fileData.folderStructure.root;
 
     for (const part of parts) {
         current = current.children[part];
@@ -481,7 +532,7 @@ function showNewFolderDialog(fileIndex) {
             ? folderName
             : `${currentLocation}/${folderName}`;
 
-        createFolder(newPath);
+        createFolder(newPath, fileIndex);
         selectedFiles[fileIndex].location = newPath;
     }
 }
