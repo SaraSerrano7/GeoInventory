@@ -12,7 +12,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 
 from Management.models import GlobalMembership, GlobalRole
-from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, Classification
+from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category
 
 
 # @login_required
@@ -143,41 +143,33 @@ def get_categories(request):
 @login_required
 @require_http_methods(["POST"])
 def upload_file(request):
-    print('uploading')
-    return JsonResponse({'test': 'test'}, status=200)
-    # TODO pirula
     try:
-        file = request.FILES.get('file')
-        if not file:
-            return JsonResponse({'status': 'error', 'message': 'No file provided'}, status=400)
+        print('uploading')
 
-        # Get other form data
-        file_name = request.POST.get('fileName', file.name)
-        projects = json.loads(request.POST.get('projects', '[]'))
-        location = request.POST.get('location', '')
-        teams = json.loads(request.POST.get('teams', '[]'))
-        categories = json.loads(request.POST.get('categories', '[]'))
+        file_name = request.POST.get("fileName")
+        file_project = request.POST.get("project")
+        file_location = request.POST.get("location")
+        file_teams = request.POST.get("teams")
+        file_categories = request.POST.get("categories")
+        geojson_content = request.FILES["geojson_file"].read().decode("utf-8")
 
-        # Process file and save to database
-        file_record = File.objects.create(
-            name=file_name,
-            location=location,
-            uploaded_by=request.user,
-            file=file  # Assuming you have configured file storage
-        )
+        if not geojson_content:
+            return JsonResponse({"error": "No se recibió un GeoJSON válido"}, status=400)
 
-        # Add relationships
-        if projects:
-            file_record.projects.set(Project.objects.filter(name__in=projects))
+        try:
+            geojson_data = json.loads(geojson_content)
+        except json.JSONDecodeError as e:
+            return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
 
-        # Add other relationships (teams, categories) as needed
+        #     # Process file and save to database
+        #     file_record = File.objects.create(
+        #         name=file_name,
+        #         location=location,
+        #         uploaded_by=request.user,
+        #         file=file  # Assuming you have configured file storage
+        #     )
 
-        return JsonResponse({
-            'status': 'success',
-            'fileId': file_record.id,
-            'message': 'File uploaded successfully'
-        })
-
+        return JsonResponse({'test': 'test'}, status=200)
     except Exception as e:
         return JsonResponse({
             'status': 'error',

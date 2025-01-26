@@ -653,9 +653,9 @@ async function startUpload() {
         // displayFiles();
 
         const formData = new FormData();
-        formData.append('file', selectedFiles[i].file);
+        // formData.append('file', selectedFiles[i].file);
         formData.append('fileName', selectedFiles[i].fileName);
-        formData.append('projects', JSON.stringify(selectedFiles[i].projects));
+        formData.append('project', selectedFiles[i].projects);
         formData.append('location', selectedFiles[i].location);
         formData.append('teams', JSON.stringify(selectedFiles[i].teams));
         formData.append('categories', JSON.stringify(selectedFiles[i].categories));
@@ -663,8 +663,21 @@ async function startUpload() {
 
         // Read and append GeoJSON content
         try {
+            console.log('selectedFile', selectedFiles)
             const geojsonText = await selectedFiles[i].file.text();
-            formData.append('geojson_content', geojsonText);
+            console.log('geojsonText', geojsonText)
+
+            console.log('formData before adding content', formData)
+
+            // formData.append('geojson_content', geojsonText);
+            formData.append(
+                "geojson_file",
+                new Blob([geojsonText],
+                { type: "application/json" }),
+                selectedFiles[i].fileName
+            );
+
+
         } catch (error) {
             console.error('Error reading file:', error);
             selectedFiles[i].status = 'error';
@@ -672,6 +685,7 @@ async function startUpload() {
             hasFailures = true;
             continue;
         }
+        console.log('formData after adding content', formData)
 
         try {
             const response = await fetch('/api/upload/', {
