@@ -300,8 +300,6 @@ async function displayFiles() {
     });
 }
 
-// function generateFolderTree(folder, path, fileIndex, currentProject) {
-
 function generateFolderTree(fileData, path, fileIndex) {
 
      if (!fileData.folderStructure) {
@@ -573,7 +571,78 @@ function confirmUpload() {
     showUploadConfirmation();
 }
 
+function validateFileUploads() {
+    console.log('staring validation')
+    let hasErrors = false;
+    const errorMessages = [];
+
+    selectedFiles.forEach((fileData, index) => {
+        // Check file extension
+        if (!fileData.fileName.toLowerCase().endsWith('.geojson')) {
+            errorMessages.push(`File ${index + 1}: Must be a .geojson file`);
+            hasErrors = true;
+            console.log('not geojson')
+        }
+
+        // Check project selection
+        if (fileData.projects.length === 0) {
+            errorMessages.push(`File ${index + 1}: Project must be selected`);
+            hasErrors = true;
+            console.log('no project')
+        }
+
+        // Check team selection
+        if (fileData.teams.length === 0) {
+            errorMessages.push(`File ${index + 1}: At least one team must be selected`);
+            hasErrors = true;
+            console.log('no team')
+        }
+    });
+    // Display errors or proceed with upload
+    if (hasErrors) {
+        console.log('showing errors')
+        showValidationErrorModal(errorMessages);
+        return false;
+    }
+
+    return true;
+}
+
+
+function showValidationErrorModal(errors) {
+    console.log('popup')
+    // hideUploadConfirmation();
+    const errorModal = document.createElement('div');
+    errorModal.className = 'validation-error-modal';
+    errorModal.innerHTML = `
+        <div class="modal-content">
+            <h2>Upload Validation Errors</h2>
+            <ul>
+                ${errors.map(error => `<li>${error}</li>`).join('')}
+            </ul>
+            <button onclick="closeValidationErrorModal()" class="btn btn-secondary">Close</button>
+        </div>
+    `;
+    document.body.appendChild(errorModal);
+}
+
+
+function closeValidationErrorModal() {
+    console.log('closing error popup')
+    const errorModal = document.querySelector('.validation-error-modal');
+    if (errorModal) {
+        errorModal.remove();
+    }
+}
+
+
 async function startUpload() {
+
+    if (!validateFileUploads()) {
+        return;
+    }
+
+
     hideUploadConfirmation();
     document.getElementById('uploadButton').style.display = 'none';
     let hasFailures = false;
@@ -590,6 +659,19 @@ async function startUpload() {
         formData.append('location', selectedFiles[i].location);
         formData.append('teams', JSON.stringify(selectedFiles[i].teams));
         formData.append('categories', JSON.stringify(selectedFiles[i].categories));
+
+
+        // Read and append GeoJSON content
+        try {
+            const geojsonText = await selectedFiles[i].file.text();
+            formData.append('geojson_content', geojsonText);
+        } catch (error) {
+            console.error('Error reading file:', error);
+            selectedFiles[i].status = 'error';
+            selectedFiles[i].errorMessage = 'Could not read file content';
+            hasFailures = true;
+            continue;
+        }
 
         try {
             const response = await fetch('/api/upload/', {
@@ -636,7 +718,7 @@ async function startUpload() {
         document.getElementById('continueButton').style.display = 'block';
     }
 
-    displayFiles();
+    await displayFiles();
 }
 
 // Function to show warning modal

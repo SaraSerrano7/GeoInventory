@@ -143,6 +143,7 @@ def get_categories(request):
 @login_required
 @require_http_methods(["POST"])
 def upload_file(request):
+    print('uploading')
     return JsonResponse({'test': 'test'}, status=200)
     # TODO pirula
     try:
