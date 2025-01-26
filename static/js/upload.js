@@ -38,63 +38,6 @@ async function fetchUserTeams(projectName) {
     }
 }
 
-// async function updateFileTeams(fileIndex, projectName) {
-//     try {
-//         const response = await fetch(`/api/user_teams/${projectName}`, {
-//             method: 'GET',
-//             headers: {
-//                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-//             }
-//         });
-//         console.log('response', response)
-//         if (!response.ok) {
-//             throw new Error('Failed to fetch teams');
-//         }
-//
-//         const teams = await response.json();
-//
-//         console.log(`teams-${fileIndex}`)
-//         const findteamSelect = document.getElementById(`teams-${fileIndex}`)
-//         console.log(findteamSelect)
-//
-//         const teamSelect = document.getElementById(`teams-${fileIndex}`).querySelector('select');
-//         const teamSelect2 = document.getElementById(`teams-${fileIndex} select`)
-//
-//         console.log('teamSelect', teamSelect)
-//         console.log('teamSelect2', teamSelect)
-//         console.log('fileIndex', fileIndex)
-//
-//         console.log(Array.isArray(teams))
-//         console.log(Array.isArray(teams.teams))
-//
-//         // findteamSelect.innerHTML = ''
-//         findteamSelect.innerHTML = '<option value="">Select team</option>'; // Reset options
-//         console.log('teams', teams)
-//         console.log('teams', teams.teams)
-//         teams.teams.forEach(team => {
-//             console.log('team:', team)
-//             console.log('team name', team.name)
-//             const option = document.createElement('option');
-//             console.log('option', option)
-//             option.value = team.name;
-//             option.textContent = team.name;
-//             option.text = team.name;
-//             console.log('option', option)
-//             findteamSelect.appendChild(option);
-//             console.log('Updated options innerhtml:', findteamSelect.innerHTML);
-//             console.log('Updated options', findteamSelect);
-//         });
-//
-//
-//
-//     } catch (error) {
-//         console.error('Error fetching teams for project:', error);
-//     }
-//
-//
-//     await displayFiles();
-// }
-
 async function updateFileTeams(fileIndex, projectName) {
     try {
         const response = await fetch(`/api/user_teams/${projectName}`, {
@@ -106,10 +49,7 @@ async function updateFileTeams(fileIndex, projectName) {
 
         const teams = await response.json();
 
-        // Debug logs
-        console.log('Looking for element:', `teams-${fileIndex}`);
         const teamSelect = document.querySelector(`select[id="teams-${fileIndex}"]`);
-        console.log('Found select element:', teamSelect);
 
         if (!teamSelect) {
             console.error('Select element not found');
@@ -118,7 +58,6 @@ async function updateFileTeams(fileIndex, projectName) {
 
         teamSelect.innerHTML = '<option value="">Select team</option>';
 
-        console.log(teams)
         teams.teams.forEach(team => {
             const option = document.createElement('option');
             option.value = team.name;
@@ -198,31 +137,21 @@ function mergeFolderStructures(existingFolders) {
 
 function createFolder(path) {
 
-    console.log('path', path)
     const pathParts = path.split('/');
-    console.log('pathParts', pathParts)
     let currentFolder = folderStructure.root;
-    console.log('folderStructure.root', folderStructure.root)
-    console.log('currentFolder', currentFolder)
     // Navegar a la ubicación deseada
     for (const part of pathParts) {
-        console.log('part', part)
-        console.log('currentFolder', currentFolder)
         if (!currentFolder.children[part]) {
             // no existe la carpeta
             if (currentFolder.name === part) {
                 continue
             } else {
-                console.log('if', !currentFolder.children[part], currentFolder.children[part])
                 currentFolder.children[part] = {children: {}, isEmpty: true}; // Crear nueva carpeta si no existe
-                console.log('currentFolder', currentFolder)
             }
 
         }
         currentFolder = currentFolder.children[part];
     }
-
-    console.log('nueva carpeta', folderStructure)
 
     // Aquí puedes llamar a displayFiles() o renderizar la estructura actualizada
     displayFiles();
@@ -247,7 +176,6 @@ function handleFileSelect(event) {
 }
 
 async function displayFiles() {
-    console.log('displaying files')
     const fileList = document.getElementById('fileList');
     fileList.innerHTML = '';
 
@@ -260,7 +188,10 @@ async function displayFiles() {
         fileItem.className = 'file-item';
 
         const currentProject = fileData.projects[0] || 'Project Root';
-        console.log('now', currentProject)
+
+        if (currentProject === 'Project Root') {
+            fileData.location = 'Project Root'
+        }
 
         // Create project options HTML
         const projectOptions = userProjects['projects'].map(project =>
@@ -346,71 +277,17 @@ async function displayFiles() {
     });
 }
 
-// function generateFolderTree(folder, path, fileIndex, currentProject) {
-//     // Determine root folder name based on project selection
-//     console.log('folder', folder)
-//     console.log('path', path)
-//     console.log('fileIndex', fileIndex)
-//     console.log('currentProject', currentProject)
-//
-//     const rootName = currentProject === 'Project Root' ? 'Project Root' : currentProject;
-//
-//     console.log('rootName', rootName)
-//
-//     let tree = '';
-//
-//     // Only show root folder if we're at the top level
-//     if (path === '') {
-//         tree = `
-//             <div class="folder-item active" onclick="updateLocation(${fileIndex}, '${rootName}')">
-//                 <i class="fas fa-folder-open"></i>
-//                 <span>${rootName}</span>
-//             </div>
-//         `;
-//         console.log('new tree', tree)
-//     } else {
-//         // For subfolders, don't show if it's the same as the project name
-//         const folderName = path.split('/').pop();
-//         if (folderName !== currentProject) {
-//             tree = `
-//                 <div class="folder-item" onclick="updateLocation(${fileIndex}, '${path}')">
-//                     <i class="fas fa-folder"></i>
-//                     <span>${folderName}</span>
-//                     <button onclick="deleteFolder('${path}', ${fileIndex})" class="delete-folder-btn" title="Delete folder">
-//                         <i class="fas fa-trash"></i>
-//                     </button>
-//                 </div>
-//             `;
-//         }
-//         console.log('new folder name', folderName)
-//         console.log('new tree', tree)
-//     }
-//
-//     // Show subfolders only if they're not the same as the project name
-//     const sortedFolders = Object.entries(folder.children)
-//         .filter(([name]) => name !== currentProject)
-//         .sort(([a], [b]) => a.localeCompare(b));
-//
-//     console.log('sorted folders', sortedFolders)
-//
-//     if (sortedFolders.length > 0) {
-//         tree += '<div class="subfolder-container">';
-//         for (const [name, content] of sortedFolders) {
-//             const newPath = path ? `${path}/${name}` : name;
-//             tree += generateFolderTree(content, newPath, fileIndex, currentProject);
-//         }
-//         tree += '</div>';
-//     }
-//
-//     console.log('new final tree', tree)
-//
-//     return tree;
-// }
-
 function generateFolderTree(folder, path, fileIndex, currentProject) {
+
+    console.log('folder', folder)
+    console.log('path', path)
+    console.log('fileIndex', fileIndex)
+    console.log('currentProject', currentProject)
+
     let tree = '';
     // Para la carpeta raíz
     if (path === '') {
+        console.log('carpeta raiz')
         const rootName = currentProject === 'Project Root' ? 'Project Root' : currentProject;
 
         tree = `
@@ -420,8 +297,12 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
             </div>
         `;
     } else {
+        console.log('subcarpetas')
         // Para las subcarpetas
         const folderName = path.split('/').pop();
+
+        console.log('folderName', folderName)
+        console.log('currentProject', currentProject)
 
         if (folderName !== currentProject) {
             tree = `
@@ -440,11 +321,24 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
         }
     }
 
+    console.log('generating treee for', currentProject)
+    if (currentProject === 'Project Root') {
+        return tree
+    }
+
+    console.log('subcarpetas 2')
+    console.log('folder', folder)
+    console.log('folder.children', folder.children)
+    console.log('if', folder && folder.children)
+
     // Subcarpetas
     if (folder && folder.children) {
         const subfolders = Object.entries(folder.children)
             .filter(([name]) => name !== currentProject) // Excluir el proyecto actual del árbol
             .sort(([a], [b]) => a.localeCompare(b)); // Ordenar alfabéticamente
+
+        console.log('subfolders', subfolders)
+        console.log('subfolders.length', subfolders.length)
 
         if (subfolders.length > 0) {
             tree += '<div class="subfolder-container">';
@@ -456,6 +350,8 @@ function generateFolderTree(folder, path, fileIndex, currentProject) {
         }
     }
 
+    console.log('tree', tree)
+
     return tree;
 }
 
@@ -463,43 +359,15 @@ function updateFileName(fileIndex, newName) {
     selectedFiles[fileIndex].fileName = newName;
 }
 
-// function updateFileProject(fileIndex, projectName) {
-//     const fileData = selectedFiles[fileIndex];
-//     const oldProject = fileData.projects[0];
-//
-//     if (projectName) {
-//         // Update this file's project
-//         fileData.projects = [projectName];
-//
-//         // Update location to new project root
-//         if (fileData.location === 'Project Root' || fileData.location === oldProject) {
-//             fileData.location = projectName;
-//         } else if (oldProject && fileData.location.startsWith(oldProject + '/')) {
-//             fileData.location = projectName + fileData.location.substring(oldProject.length);
-//         }
-//     } else {
-//         // Reset to default
-//         fileData.projects = [];
-//         if (fileData.location === oldProject) {
-//             fileData.location = 'Project Root';
-//         }
-//     }
-//
-//     displayFiles();
-// }
-
 async function updateFileProject(fileIndex, projectName) {
     const fileData = selectedFiles[fileIndex];
     const oldProject = fileData.projects[0];
-    console.log('project name', projectName)
-
 
     if (projectName) {
         // Update this file's project
         fileData.projects = [projectName];
 
         const existingFolders = await fetchProjectFolders(projectName);
-        console.log('existingFolders', existingFolders)
         folderStructure = {
             root: {
                 name: projectName,
@@ -519,10 +387,7 @@ async function updateFileProject(fileIndex, projectName) {
             fileData.location = projectName + fileData.location.substring(oldProject.length);
         }
 
-        // // Clear any old project folders from the structure
-        // if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
-        //     delete folderStructure.root.children[oldProject];
-        // }
+
         if (oldProject && folderStructure.root.children[oldProject]) {
             // Elimina la carpeta solo si no es el proyecto actual
             if (oldProject !== projectName) {
@@ -530,13 +395,10 @@ async function updateFileProject(fileIndex, projectName) {
             }
         }
 
-        // const userTeams = await fetchUserTeams(projectName);
-        // updateTeamsDropdown(fileIndex, userTeams);
         await updateFileTeams(fileIndex, projectName);
 
 
     } else {
-        console.log('file project', projectName)
         // Reset to default
         fileData.projects = [];
         folderStructure = {
@@ -556,8 +418,6 @@ async function updateFileProject(fileIndex, projectName) {
             fileData.location = 'Project Root'
         }
 
-        console.log('new location', fileData.location)
-
         // Clean up any project-named folders
         if (oldProject && oldProject !== 'Project Root' && folderStructure.root.children[oldProject]) {
             delete folderStructure.root.children[oldProject];
@@ -565,18 +425,6 @@ async function updateFileProject(fileIndex, projectName) {
     }
 
     await displayFiles();
-}
-
-function updateTeamsDropdown(fileIndex, teams) {
-    const selectElement = document.getElementById(`teams-select-${fileIndex}`);
-    selectElement.innerHTML = '<option value="">Select team</option>';
-
-    teams.forEach(team => {
-        const option = document.createElement('option');
-        option.value = team.name;
-        option.textContent = team.name;
-        selectElement.appendChild(option);
-    });
 }
 
 function deleteFolder(path, fileIndex) {
@@ -635,18 +483,10 @@ function showNewFolderDialog(fileIndex) {
 
         createFolder(newPath);
         selectedFiles[fileIndex].location = newPath;
-
-        console.log(selectedFiles)
-
-        // displayFiles();
     }
 }
 
 function updateLocation(fileIndex, newLocation) {
-    console.log('fileIndex', fileIndex)
-    console.log('newLocation', newLocation)
-    console.log('selectedFiles', selectedFiles)
-
     selectedFiles[fileIndex].location = newLocation;
     displayFiles();
 }
@@ -679,58 +519,6 @@ function addTag(fileIndex, type, value) {
 function removeTag(fileIndex, type, tag) {
     selectedFiles[fileIndex][type] = selectedFiles[fileIndex][type].filter(t => t !== tag);
     displayFiles();
-}
-
-function renderFiles() {
-    const fileList = document.getElementById('fileList');
-    fileList.innerHTML = selectedFiles.map((fileData, index) => `
-            <div class="file-item">
-                <div class="file-header">
-                    <i class="fas fa-file"></i>
-                    <span>${fileData.file.name}</span>
-                    ${fileData.status ? getStatusIcon(fileData.status) : ''}
-                </div>
-
-                <div class="select-group">
-                    <label>Project</label>
-                    <select onchange="addTag(${index}, 'projects', this.value)">
-                        <option value="">Select project</option>
-                        {% for project in projects %}
-                            <option value="{{ project.name }}">{{ project.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="tag-container">
-                        ${fileData.projects.map(tag => createTag(tag, index, 'projects')).join('')}
-                    </div>
-                </div>
-
-                <div class="select-group">
-                    <label>Teams</label>
-                    <select onchange="addTag(${index}, 'teams', this.value)">
-                        <option value="">Select team</option>
-                        {% for team in teams %}
-                            <option value="{{ team.name }}">{{ team.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="tag-container">
-                        ${fileData.teams.map(tag => createTag(tag, index, 'teams')).join('')}
-                    </div>
-                </div>
-
-                <div class="select-group">
-                    <label>Categories</label>
-                    <select onchange="addTag(${index}, 'categories', this.value)">
-                        <option value="">Select category</option>
-                        {% for category in categories %}
-                            <option value="{{ category.name }}">{{ category.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="tag-container">
-                        ${fileData.categories.map(tag => createTag(tag, index, 'categories')).join('')}
-                    </div>
-                </div>
-            </div>
-        `).join('');
 }
 
 
@@ -831,21 +619,6 @@ async function startUpload() {
         document.getElementById('continueButton').style.display = 'block';
     }
 
-    displayFiles();
-}
-
-// New function to handle retrying uploads
-function retryUpload() {
-    // Reset status for failed uploads
-    selectedFiles = selectedFiles.map(file => ({
-        ...file,
-        status: file.status === 'error' ? null : file.status,
-        errorMessage: file.status === 'error' ? null : file.errorMessage
-    }));
-
-    document.getElementById('continueButton').style.display = 'none';
-    document.getElementById('uploadButton').style.display = 'block';
-    document.getElementById('retryFailedButton').style.display = 'none';
     displayFiles();
 }
 
