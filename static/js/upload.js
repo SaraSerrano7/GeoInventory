@@ -38,6 +38,63 @@ async function fetchUserTeams(projectName) {
     }
 }
 
+// async function updateFileTeams(fileIndex, projectName) {
+//     try {
+//         const response = await fetch(`/api/user_teams/${projectName}`, {
+//             method: 'GET',
+//             headers: {
+//                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+//             }
+//         });
+//         console.log('response', response)
+//         if (!response.ok) {
+//             throw new Error('Failed to fetch teams');
+//         }
+//
+//         const teams = await response.json();
+//
+//         console.log(`teams-${fileIndex}`)
+//         const findteamSelect = document.getElementById(`teams-${fileIndex}`)
+//         console.log(findteamSelect)
+//
+//         const teamSelect = document.getElementById(`teams-${fileIndex}`).querySelector('select');
+//         const teamSelect2 = document.getElementById(`teams-${fileIndex} select`)
+//
+//         console.log('teamSelect', teamSelect)
+//         console.log('teamSelect2', teamSelect)
+//         console.log('fileIndex', fileIndex)
+//
+//         console.log(Array.isArray(teams))
+//         console.log(Array.isArray(teams.teams))
+//
+//         // findteamSelect.innerHTML = ''
+//         findteamSelect.innerHTML = '<option value="">Select team</option>'; // Reset options
+//         console.log('teams', teams)
+//         console.log('teams', teams.teams)
+//         teams.teams.forEach(team => {
+//             console.log('team:', team)
+//             console.log('team name', team.name)
+//             const option = document.createElement('option');
+//             console.log('option', option)
+//             option.value = team.name;
+//             option.textContent = team.name;
+//             option.text = team.name;
+//             console.log('option', option)
+//             findteamSelect.appendChild(option);
+//             console.log('Updated options innerhtml:', findteamSelect.innerHTML);
+//             console.log('Updated options', findteamSelect);
+//         });
+//
+//
+//
+//     } catch (error) {
+//         console.error('Error fetching teams for project:', error);
+//     }
+//
+//
+//     await displayFiles();
+// }
+
 async function updateFileTeams(fileIndex, projectName) {
     try {
         const response = await fetch(`/api/user_teams/${projectName}`, {
@@ -46,48 +103,33 @@ async function updateFileTeams(fileIndex, projectName) {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             }
         });
-        console.log('response', response)
-        if (!response.ok) {
-            throw new Error('Failed to fetch teams');
-        }
 
         const teams = await response.json();
 
-        console.log(`teams-${fileIndex}`)
-        const findteamSelect = document.getElementById(`teams-${fileIndex}`)
-        console.log(findteamSelect)
+        // Debug logs
+        console.log('Looking for element:', `teams-${fileIndex}`);
+        const teamSelect = document.querySelector(`select[id="teams-${fileIndex}"]`);
+        console.log('Found select element:', teamSelect);
 
-        const teamSelect = document.getElementById(`teams-${fileIndex}`).querySelector('select');
+        if (!teamSelect) {
+            console.error('Select element not found');
+            return;
+        }
 
-        console.log('teamSelect', teamSelect)
-        console.log('fileIndex', fileIndex)
+        teamSelect.innerHTML = '<option value="">Select team</option>';
 
-        console.log(Array.isArray(teams))
-        console.log(Array.isArray(teams.teams))
-
-        // teamSelect.innerHTML = '<option value="">Select team</option>'; // Reset options
-        console.log('teams', teams)
-        console.log('teams', teams.teams)
+        console.log(teams)
         teams.teams.forEach(team => {
-            console.log('team:', team)
-            console.log('team name', team.name)
             const option = document.createElement('option');
-            console.log('option', option)
             option.value = team.name;
-            option.textContent = team.name;
-            console.log('option', option)
-            findteamSelect.appendChild(option);
-            console.log('Updated options:', findteamSelect.innerHTML);
+            option.text = team.name;
+            teamSelect.appendChild(option);
         });
 
     } catch (error) {
-        console.error('Error fetching teams for project:', error);
+        console.error('Error:', error);
     }
-
-
-    await displayFiles();
 }
-
 
 function openUploadModal(event) {
     event.preventDefault();
@@ -218,6 +260,7 @@ async function displayFiles() {
         fileItem.className = 'file-item';
 
         const currentProject = fileData.projects[0] || 'Project Root';
+        console.log('now', currentProject)
 
         // Create project options HTML
         const projectOptions = userProjects['projects'].map(project =>
@@ -294,6 +337,12 @@ async function displayFiles() {
             </div>
         `;
         fileList.appendChild(fileItem);
+
+        if(currentProject !== 'Project Root') {
+            updateFileTeams(index, currentProject)
+        }
+
+
     });
 }
 

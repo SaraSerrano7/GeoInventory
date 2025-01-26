@@ -11,8 +11,8 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 
-from Management.models import GlobalMembership
-from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team
+from Management.models import GlobalMembership, GlobalRole
+from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, ROLES_CHOICES, Role
 
 
 # @login_required
@@ -93,6 +93,18 @@ def get_user_projects(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+def user_is_superadmin(user):
+    gloabl_role = GlobalRole.objects.get(globalmembership__related_user=user)
+    return gloabl_role.name == 'superadmin'
+
+
+def user_is_project_admin(user, project):
+    assignations = Assignations.objects.filter(assignated_project__name=project,
+                                               assignated_team__membership__member=user,
+                                               assignated_team__membership__user_role=5)
+    return True if assignations else False
+
+
 @login_required
 @require_http_methods(["GET"])
 def get_user_teams(request, project_name=None):
@@ -104,7 +116,12 @@ def get_user_teams(request, project_name=None):
 
         current_user = request.user
         print(current_user)
-        user_teams = query_user_teams(request.user).values('name')
+
+        if user_is_superadmin(current_user) or user_is_project_admin(current_user, project_name):
+            user_teams = Team.objects.filter(assignations__assignated_project__name=project_name).values('name')
+            # user_teams = query_user_teams(request.user).values('name')
+        else:
+            user_teams = query_user_teams(request.user).values('name')
 
         # projects = Project.objects.filter(users=request.user).values('id', 'name')
         return JsonResponse({'teams': list(user_teams)})
