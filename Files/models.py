@@ -5,26 +5,27 @@ These model classes represents Files and Users relations.
 from django.contrib.auth.models import User
 from django.contrib.gis.db import models
 from django.utils.timezone import now
+from polymorphic.models import PolymorphicManager, PolymorphicModel
 
 
 # Create your models here.
 
-class DigitalResource(models.Model):
+class DigitalResource(models.Model): #PolymorphicModel
     """
     Historic info about data manipulation
     """
     creator = models.ForeignKey(
         User,
-        default='deleted user',
-        on_delete=models.SET_DEFAULT,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='creator_info'
     )
     created_at = models.DateTimeField(default=now, editable=False)
 
     editor = models.ForeignKey(
         User,
-        default='deleted user',
-        on_delete=models.SET_DEFAULT,
+        on_delete=models.SET_NULL,
         related_name='editor_info',
         null=True,
         blank=True
@@ -77,8 +78,8 @@ class Membership(DigitalResource):
     """
     Represents the role a user can be given at a certain team
     """
-    member = models.ForeignKey(User, default='deleted user', on_delete=models.CASCADE)
-    user_team = models.ForeignKey(Team, default='deleted team', on_delete=models.SET_DEFAULT)
+    member = models.ForeignKey(User, on_delete=models.CASCADE)
+    user_team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
     user_role = models.ForeignKey(Role, default=ROLES_CHOICES[0], on_delete=models.SET_DEFAULT)
 
     # info = models.ManyToManyField(DigitalResource, related_name='membership_info')
@@ -109,13 +110,15 @@ class Assignations(DigitalResource):
     """
     assignated_project = models.ForeignKey(
         Project,
-        default='deleted project',
-        on_delete=models.SET_DEFAULT
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
     assignated_team = models.ForeignKey(
         Team,
-        default='deleted team',
-        on_delete=models.SET_DEFAULT
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
     assignation_date = models.DateTimeField(default=now, editable=False)
 
@@ -151,8 +154,18 @@ class Access(DigitalResource):
     """
     Class to specify which team has access to a certain file
     """
-    accessed_file = models.ForeignKey(File, default='deleted file', on_delete=models.SET_DEFAULT)
-    accessing_team = models.ForeignKey(Team, default='deleted team', on_delete=models.SET_DEFAULT)
+    accessed_file = models.ForeignKey(
+        File,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    accessing_team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True
+    )
 
     # info = models.ManyToManyField(DigitalResource, related_name='access_info')
 
@@ -195,9 +208,9 @@ class Location(DigitalResource):
     """
     # TODO el path este no deberia estar en folder realmente???
     located_file = models.ForeignKey(
-        File, default='deleted file', on_delete=models.SET_DEFAULT, null=True, blank=True)
+        File, on_delete=models.SET_NULL, null=True, blank=True)
     located_project = models.ForeignKey(
-        Project, default='deleted project', on_delete=models.SET_DEFAULT, null=True, blank=True)
+        Project, on_delete=models.SET_NULL, null=True, blank=True)
     located_folder = models.ForeignKey(
         Folder, on_delete=models.SET_NULL, null=True, blank=True)
     # info = models.ManyToManyField(DigitalResource, related_name='location_info')
@@ -230,6 +243,7 @@ class Classification(DigitalResource):
     """
     related_file = models.ForeignKey(File, on_delete=models.SET_NULL, null=True, blank=True)
     category_name = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+
     # info = models.ManyToManyField(DigitalResource, related_name='category_info')
 
     def __str__(self):

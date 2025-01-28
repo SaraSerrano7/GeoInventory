@@ -7,12 +7,14 @@ import json
 # Create your views here.
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 
 from Management.models import GlobalMembership, GlobalRole
-from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category
+from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
+    GeoJSON, Classification, GEOJSON_TYPE_CHOICES
 
 
 # @login_required
@@ -142,10 +144,9 @@ def get_categories(request):
 
 @login_required
 @require_http_methods(["POST"])
+@transaction.atomic
 def upload_file(request):
     try:
-        print('uploading')
-
         file_name = request.POST.get("fileName")
         file_project = request.POST.get("project")
         file_location = request.POST.get("location")
@@ -156,20 +157,111 @@ def upload_file(request):
         if not geojson_content:
             return JsonResponse({"error": "No se recibió un GeoJSON válido"}, status=400)
 
-        try:
-            geojson_data = json.loads(geojson_content)
-        except json.JSONDecodeError as e:
-            return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
+        teams_list = json.loads(file_teams)
+        categories_list = json.loads(file_categories)
+        geojson_data = json.loads(geojson_content)
 
-        #     # Process file and save to database
-        #     file_record = File.objects.create(
-        #         name=file_name,
-        #         location=location,
-        #         uploaded_by=request.user,
-        #         file=file  # Assuming you have configured file storage
-        #     )
+        # Create GeoJSONFile
+        content_type = geojson_data['type']
+        content_type_id = GEOJSON_TYPE_CHOICES.index((content_type, content_type))
+        current_user_object = User.objects.get(pk=request.user.id)
+        geojson_file = GeoJSON.objects.create(
+            creator=current_user_object,
+            content_type=content_type_id,
+            name=file_name
+        )
+
+        geojson_file_instance = File.objects.get(id=geojson_file.id)
+
+        # Define file access
+        for team_name in teams_list:
+            team = Team.objects.get(name=team_name)
+            access = Access.objects.create(accessed_file=geojson_file_instance, accessing_team=team)
+
+        project = Project.objects.get(name=file_project)
+
+        # Locate Folder
+        if file_location == file_project:
+
+            location = Location.objects.create(
+                located_folder=None,
+                located_project=project,
+                located_file=geojson_file_instance
+            )
+        else:
+            # TODO folder nueva
+            # TODO subfolder de folder nueva
+            folder = Folder.objects.get(path=file_location)
+            location = Location.objects.create(
+                located_folder=folder,
+                located_project=project,
+                located_file=geojson_file_instance
+            )
+
+        # Classify file
+        if categories_list:
+            for category_name in categories_list:
+                category = Category.objects.get(label=category_name)
+                classification = Classification.objects.create(related_file=geojson_file, category_name=category)
+
+        # Add each geojson feature
+        # content_type
+        if content_type == 'Feature':
+            geometry = geojson_data['geometry']
+            geometry_type = geometry["type"]
+            coordinates = geometry["coordinates"]
+            # TODO create geometry
+            properties = geojson_data['properties']
+            for (key, value) in properties.items():
+                attribute_name = key
+                attribute_type = type(json.loads(value))
+                attribute_value = value
+        #         TODO create feature and content
+        else:
+            for feature in geojson_data['features']:
+                # TODO
+                pass
+        '''
+        1. Create a GeoJSONFile
+            - content_type = geojson_content.type
+            - name = filename
+            
+        2. ACCESS
+            - accessed_file
+            - accessing_team = file_team
+            
+        3. FOLDER
+            (if file_location does not exist)
+            - name
+            - parent
+            
+        4. LOCATION
+            - located_file
+            - located_project
+            - located_folder
+            - path
+        
+        5. CLASSIFICATION
+            - related_file
+            - category_name
+            
+            
+        6. GEOJSONFEATURE
+            - feature_type = geojson_content.features.type
+            - geometry = geojson_content.features.coordinates
+            - attribute_name = geojson_content.properties.key
+            - attribute_type = type(geojson_content.properties.value)
+            - attribute_value = geojson_content.properties.value
+        
+        7. CONTENT
+            - geojson_file
+            - feature
+                
+        '''
 
         return JsonResponse({'test': 'test'}, status=200)
+    except json.JSONDecodeError as e:
+        return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
     except Exception as e:
         return JsonResponse({
             'status': 'error',
