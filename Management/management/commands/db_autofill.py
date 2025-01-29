@@ -1,14 +1,11 @@
-import os
-import subprocess
 from typing import Type
 
 from astroid.interpreter.objectmodel import ObjectModel
-from django.db import connection
-from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from Files.models import Role, Team, Membership, Project
-from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.db import connection
 
+from Files.models import Role, Team, Membership, Project
 from Management.models import GlobalRole, GlobalMembership
 
 
@@ -195,7 +192,6 @@ class Command(BaseCommand):
         ]
         self.create_objects(notice_message, projects_data, Project)
 
-
     def create_assignations(self):
         print('Creating assignations: proyecto_cultivos_herbaceos - team_patata')
         print('Creating assignations: proyecto_cultivos_herbaceos - team_arroz')
@@ -214,22 +210,28 @@ class Command(BaseCommand):
         print('Creating geojson: sample_file1.txt - featurecollection')
 
     def create_folders(self):
-        pass
+        print('Creating folder: input')
+        print('Creating folder: input/type1')
+        print('Creating folder: input/type2')
+        print('Creating folder: input/type2/subtype1')
 
     def create_locations(self):
-        pass
+        print('Creating location: proyecto_cultivos_herbaceos - input/type1 - sample_file1.txt')
+        print('Creating location: proyecto_cultivos_herbaceos - input/type2/subtype1 - sample_file1.txt')
 
     def create_geojsonfeature(self):
-        pass
+        print('Creating geojsonfeature: file1 - multipolygon - polygon1')
+        print('Creating geojsonfeature: file1 - multipolygon - polygon2')
 
-    def create_geojsonfeaturecontent(self):
-        pass
+    def create_geojsonfeatureproperty(self):
+        print('Creating feature property: feature1 - atribute1 - value')
+        print('Creating feature property: feature1 - atribute2 - value')
+        print('Creating feature property: feature2 - atribute3 - value')
 
-    def create_geojsonfeatureproperties(self):
-        pass
-
-    def create_geojsonfeatuepropertiesdescriptions(self):
-        pass
+    def create_propertyattribute(self):
+        print('Creating feature attribute1: cropname - string')
+        print('Creating feature attribute2: owner - string')
+        print('Creating feature attribute3: yield - int')
 
     def db_autofill(self):
         self.chech_postgis_extensions()
@@ -241,20 +243,19 @@ class Command(BaseCommand):
         self.create_membership()
         self.create_projects()
 
+        ##############
+
+        self.create_assignations()
+        self.create_categories()
+        self.create_classifications()
+        self.create_geojson()
+        self.create_folders()
+        self.create_locations()
+        self.create_geojsonfeature()
+        self.create_geojsonfeatureproperty()
+        self.create_propertyattribute()
 
 
-
-
-        print('Creating folder: input')
-        print('Creating folder: input/type1')
-        print('Creating folder: input/type2')
-        print('Creating folder: input/type2/subtype1')
-        print('Creating location: proyecto_cultivos_herbaceos - input/type1 - sample_file1.txt')
-        print('Creating location: proyecto_cultivos_herbaceos - input/type2/subtype1 - sample_file1.txt')
-        print('Creating geojsonfeature: polygon1 - multipolygon - crop - string - patata')
-        print('Creating geojsonfeature: polygon1 - multipolygon - yield - int - "250"')
-        print('Creating content: sample_file1.txt - geojsonfeature1')
-        print('Creating content: sample_file1.txt - geojsonfeature1')
 
     def handle(self, *args, **options):
         self.db_autofill()

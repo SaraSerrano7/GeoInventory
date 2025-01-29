@@ -14,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 
 from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
-    GeoJSON, Classification, GEOJSON_TYPE_CHOICES
+    Classification, GeoJSON, GeoJSONFeature, GeoJSONFeatureProperties, PropertyAttribute, GEOJSON_TYPE_CHOICES, GEOJSON_ATTR_TYPE_CHOICES, GEOJSON_GEOMETRY_TYPE_CHOICES
 
 
 # @login_required

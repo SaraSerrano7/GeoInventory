@@ -287,33 +287,6 @@ GEOJSON_ATTR_TYPE_CHOICES = [
 ]
 
 
-class GeoJSONFeatureProperties(models.Model):
-    # polygon = models.ForeignKey(GeoJSONFeature, on_delete=models.SET_NULL, blank=True, null=True)
-    attribute_name = models.CharField(max_length=100)
-    attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
-    attribute_value = models.CharField(max_length=250)
-
-    def __str__(self):
-        return f"({self.attribute_type} {self.attribute_name} - {self.attribute_value}"
-
-
-class GeoJSONFeature(models.Model):
-    """
-    Class to represent a single GeoJSON feature
-    """
-    feature_type = models.CharField(max_length=50, choices=GEOJSON_GEOMETRY_TYPE_CHOICES)
-    geometry = models.GeometryField(null=True, blank=True)
-
-    properties = models.ManyToManyField(GeoJSONFeatureProperties, related_name='GeoJSONFeaturePropertiesDescription')
-
-    # attribute_name = models.CharField(max_length=100)
-    # attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
-    # attribute_value = models.CharField(max_length=250)
-
-    def __str__(self):
-        return str(self.feature_type) + str(self.pk)
-
-
 class GeoJSON(File):
     """
     Class to represent a GeoJSON filetype
@@ -326,12 +299,47 @@ class GeoJSON(File):
         return str(self.name)
 
 
-class GeoJSONContent(models.Model):
+class GeoJSONFeature(models.Model):
     """
-    Class to represent the features contained in a GeoJSON file
+    Class to represent a single GeoJSON feature
     """
-    geojson_file = models.ForeignKey(GeoJSON, null=True, blank=True, on_delete=models.SET_NULL)
-    feature = models.ForeignKey(GeoJSONFeature, null=True, blank=True, on_delete=models.SET_NULL)
+    file = models.ForeignKey(GeoJSON, on_delete=models.SET_NULL, null=True, blank=True)
+    feature_type = models.CharField(max_length=50, choices=GEOJSON_GEOMETRY_TYPE_CHOICES)
+    geometry = models.GeometryField(null=True, blank=True)
+
+    # properties = models.ManyToManyField(GeoJSONFeatureProperties, related_name='GeoJSONFeaturePropertiesDescription')
+
+    # attribute_name = models.CharField(max_length=100)
+    # attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
+    # attribute_value = models.CharField(max_length=250)
+
+    def __str__(self):
+        return str(self.feature_type) + str(self.pk)
+
+
+class PropertyAttribute(models.Model):
+    attribute_name = models.CharField(max_length=100)
+    attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
+
+    def __str__(self):
+        return f"({self.attribute_type}) {self.attribute_name}"
+
+
+class GeoJSONFeatureProperties(models.Model):
+    feature = models.ForeignKey(GeoJSONFeature, on_delete=models.SET_NULL, blank=True, null=True)
+    attribute = models.ForeignKey(PropertyAttribute, on_delete=models.SET_NULL, null=True, blank=True)
+    attribute_value = models.CharField(max_length=250)
+
+    def __str__(self):
+        return f"{self.attribute} = {self.attribute_value}"
+
+# class GeoJSONContent(models.Model):
+#     """
+#     Class to represent the features contained in a GeoJSON file
+#     """
+#     geojson_file = models.ForeignKey(GeoJSON, null=True, blank=True, on_delete=models.SET_NULL)
+#     feature = models.ForeignKey(GeoJSONFeature, null=True, blank=True, on_delete=models.SET_NULL)
+
 
 # class Shapefile(File):
 #     """
