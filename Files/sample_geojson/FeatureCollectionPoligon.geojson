@@ -1,0 +1,39 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-100.0, 40.0],
+            [-101.0, 39.0],
+            [-102.0, 40.0],
+            [-100.0, 40.0]
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Polígono 1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-103.0, 42.0],
+            [-104.0, 41.0],
+            [-105.0, 42.0],
+            [-103.0, 42.0]
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Polígono 2"
+      }
+    }
+  ]
+}

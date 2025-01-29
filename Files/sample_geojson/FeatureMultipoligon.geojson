@@ -1,0 +1,27 @@
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+      [
+        [  // Primer polígono
+          [-100.0, 40.0],
+          [-101.0, 39.0],
+          [-102.0, 40.0],
+          [-100.0, 40.0]
+        ]
+      ],
+      [
+        [  // Segundo polígono
+          [-103.0, 41.0],
+          [-104.0, 40.0],
+          [-105.0, 41.0],
+          [-103.0, 41.0]
+        ]
+      ]
+    ]
+  },
+  "properties": {
+    "name": "Ejemplo de MultiPolígono"
+  }
+}

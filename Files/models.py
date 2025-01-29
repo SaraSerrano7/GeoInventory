@@ -5,12 +5,11 @@ These model classes represents Files and Users relations.
 from django.contrib.auth.models import User
 from django.contrib.gis.db import models
 from django.utils.timezone import now
-from polymorphic.models import PolymorphicManager, PolymorphicModel
 
 
 # Create your models here.
 
-class DigitalResource(models.Model): #PolymorphicModel
+class DigitalResource(models.Model):  # PolymorphicModel
     """
     Historic info about data manipulation
     """
@@ -183,6 +182,12 @@ class Folder(DigitalResource):
     parent = models.ForeignKey(
         'self', on_delete=models.SET_NULL, null=True, blank=True
     )
+    path = models.CharField(
+        max_length=255,
+        editable=False,
+        unique=True,
+        default=name
+    )
 
     # info = models.ManyToManyField(DigitalResource, related_name='folder_info')
 
@@ -190,15 +195,20 @@ class Folder(DigitalResource):
         """
         Returns the folder's name
         """
-        return f"{self.parent}/{self.name}" if self.parent else str(self.name)
+        # return f"{self.parent}/{self.name}" if self.parent else str(self.name)
+        return f"{self.path}"
 
-    @property
-    def path(self):
+    def save(self, *args, **kwargs):
+        self.build_path()
+        super().save(*args, **kwargs)
+
+    # @property
+    def build_path(self):
         """
         Recursively build the full path of the folder.
         """
         if self.parent:
-            return f"{self.parent.name}/{self.name}"
+            return f"{self.parent.path}/{self.name}"
         return str(self.name)
 
 
@@ -277,15 +287,28 @@ GEOJSON_ATTR_TYPE_CHOICES = [
 ]
 
 
+class GeoJSONFeatureProperties(models.Model):
+    # polygon = models.ForeignKey(GeoJSONFeature, on_delete=models.SET_NULL, blank=True, null=True)
+    attribute_name = models.CharField(max_length=100)
+    attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
+    attribute_value = models.CharField(max_length=250)
+
+    def __str__(self):
+        return f"({self.attribute_type} {self.attribute_name} - {self.attribute_value}"
+
+
 class GeoJSONFeature(models.Model):
     """
     Class to represent a single GeoJSON feature
     """
     feature_type = models.CharField(max_length=50, choices=GEOJSON_GEOMETRY_TYPE_CHOICES)
     geometry = models.GeometryField(null=True, blank=True)
-    attribute_name = models.CharField(max_length=100)
-    attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
-    attribute_value = models.CharField(max_length=250)
+
+    properties = models.ManyToManyField(GeoJSONFeatureProperties, related_name='GeoJSONFeaturePropertiesDescription')
+
+    # attribute_name = models.CharField(max_length=100)
+    # attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
+    # attribute_value = models.CharField(max_length=250)
 
     def __str__(self):
         return str(self.feature_type) + str(self.pk)
@@ -303,7 +326,7 @@ class GeoJSON(File):
         return str(self.name)
 
 
-class Content(models.Model):
+class GeoJSONContent(models.Model):
     """
     Class to represent the features contained in a GeoJSON file
     """
