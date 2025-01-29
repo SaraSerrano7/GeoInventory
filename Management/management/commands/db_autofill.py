@@ -6,7 +6,7 @@ from astroid.interpreter.objectmodel import ObjectModel
 from django.db import connection
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from Files.models import Role, Team
+from Files.models import Role, Team, Membership, Project
 from django.conf import settings
 
 from Management.models import GlobalRole, GlobalMembership
@@ -35,7 +35,7 @@ class Command(BaseCommand):
                 cursor.execute("CREATE EXTENSION postgis;")
                 self.stdout.write(self.style.SUCCESS("PostGIS has been installed successfully."))
             else:
-                self.stdout.write(self.style.SUCCESS("PostGIS is already installed."))
+                self.stdout.write(self.style.WARNING("PostGIS is already installed."))
 
             # Si PostGISTopology no está instalado, lo instalamos
             if not postgistopology_installed:
@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 cursor.execute("CREATE EXTENSION postgis_topology;")
                 self.stdout.write(self.style.SUCCESS("PostGISTopology has been installed successfully."))
             else:
-                self.stdout.write(self.style.SUCCESS("PostGISTopology is already installed."))
+                self.stdout.write(self.style.WARNING("PostGISTopology is already installed."))
 
     def create_users(self):
         self.stdout.write(self.style.NOTICE("Checking users..."))
@@ -101,14 +101,11 @@ class Command(BaseCommand):
                        related_classes=None):
         self.stdout.write(self.style.NOTICE(notice_message))
         for object_data in objects_data:
-            # attr = list(object_data.keys())
-            if not classname.objects.filter(**object_data).exists():
-                created = classname.objects.create(**object_data)
-
-                self.stdout.write(self.style.SUCCESS(f" '{created}' created successfully."))
+            result, created = classname.objects.get_or_create(**object_data)
+            if created:
+                self.stdout.write(self.style.SUCCESS(f" '{result}' created successfully."))
             else:
-                self.stdout.write(self.style.WARNING(f"'{str(classname)}' already exists."))
-
+                self.stdout.write(self.style.WARNING(f"'{result}' already exists."))
 
     def create_global_roles(self):
         notice_message = "Checking global roles..."
@@ -118,54 +115,136 @@ class Command(BaseCommand):
         ]
         self.create_objects(notice_message, global_roles_data, GlobalRole)
 
-
     def create_global_membership(self):
         notice_message = "Checking global membership..."
+
         superadmin_type = GlobalRole.objects.get(name="superadmin")
         superadmin_user = User.objects.get(username='superadminUser')
+
+        regular_type = GlobalRole.objects.get(name="regular")
+        admin_user = User.objects.get(username='adminUser')
+        creator_user = User.objects.get(username='creatorUser')
+        viewer_user = User.objects.get(username='viewerUser')
+        guest_user = User.objects.get(username='guestUser')
+
         global_membership_data = [
             {"user_type": superadmin_type, "related_user": superadmin_user},
+            {"user_type": regular_type, "related_user": admin_user},
+            {"user_type": regular_type, "related_user": creator_user},
+            {"user_type": regular_type, "related_user": viewer_user},
+            {"user_type": regular_type, "related_user": guest_user},
         ]
 
         self.create_objects(notice_message, global_membership_data, GlobalMembership)
 
-
     def create_teams(self):
         notice_message = "Checking teams..."
         teams_data = [
-            {"name", "team_patata"},
-            {"name", "team_arroz"},
-            {"name", "team_cereal"},
-            {"name", "team_viña"},
+            {"name": "team_patata"},
+            {"name": "team_arroz"},
+            {"name": "team_cereal"},
+            {"name": "team_viña"},
         ]
         self.create_objects(notice_message, teams_data, Team)
+
+    # TODO añadir el creator superadmin
+
+    def create_membership(self):
+        notice_message = "Checking membership..."
+        superadmin_user = User.objects.get(username='superadminUser')
+
+        admin_user = User.objects.get(username='adminUser')
+        creator_user = User.objects.get(username='creatorUser')
+        viewer_user = User.objects.get(username='viewerUser')
+        guest_user = User.objects.get(username='guestUser')
+
+        admin_role = Role.objects.get(role_name='admin')
+        creator_role = Role.objects.get(role_name='creator')
+        viewer_role = Role.objects.get(role_name='viewer')
+        guest_role = Role.objects.get(role_name='guest')
+
+        team_patata = Team.objects.get(name='team_patata')
+        team_arroz = Team.objects.get(name='team_arroz')
+        team_cereal = Team.objects.get(name='team_cereal')
+        team_viña = Team.objects.get(name='team_viña')
+
+        membership_data = [
+            {"member": superadmin_user, "user_role": admin_role, "user_team": team_patata},
+            {"member": superadmin_user, "user_role": admin_role, "user_team": team_arroz},
+            {"member": superadmin_user, "user_role": admin_role, "user_team": team_cereal},
+            {"member": superadmin_user, "user_role": admin_role, "user_team": team_viña},
+
+            {"member": admin_user, "user_role": admin_role, "user_team": team_patata},
+
+            {"member": creator_user, "user_role": creator_role, "user_team": team_patata},
+            {"member": creator_user, "user_role": creator_role, "user_team": team_viña},
+
+            {"member": viewer_user, "user_role": viewer_role, "user_team": team_patata},
+            {"member": viewer_user, "user_role": viewer_role, "user_team": team_viña},
+
+            {"member": guest_user, "user_role": guest_role, "user_team": team_viña},
+        ]
+        self.create_objects(notice_message, membership_data, Membership)
+
+    def create_projects(self):
+        notice_message = "Checking projects..."
+
+        projects_data = [
+            {"name": "proyecto_cultivo_herbaceos"},
+            {"name": "proyecto_cultivo_leñosos"},
+        ]
+        self.create_objects(notice_message, projects_data, Project)
+
+
+    def create_assignations(self):
+        print('Creating assignations: proyecto_cultivos_herbaceos - team_patata')
+        print('Creating assignations: proyecto_cultivos_herbaceos - team_arroz')
+        print('Creating assignations: proyecto_cultivos_herbaceos - team_cereal')
+        print('Creating assignations: proyecto_cultivos_leñosos - team_viña')
+
+    def create_categories(self):
+        print('Creating categories: vectorial')
+        print('Creating categories: farms')
+
+    def create_classifications(self):
+        print('Creating classification: sample_file1.txt - farms')
+        print('Creating classification: sample_file1.txt - vectorial')
+
+    def create_geojson(self):
+        print('Creating geojson: sample_file1.txt - featurecollection')
+
+    def create_folders(self):
+        pass
+
+    def create_locations(self):
+        pass
+
+    def create_geojsonfeature(self):
+        pass
+
+    def create_geojsonfeaturecontent(self):
+        pass
+
+    def create_geojsonfeatureproperties(self):
+        pass
+
+    def create_geojsonfeatuepropertiesdescriptions(self):
+        pass
 
     def db_autofill(self):
         self.chech_postgis_extensions()
         self.create_users()
         self.create_roles()
         self.create_global_roles()
-        # TODO añadir el resto de usuarios a regular,
         self.create_global_membership()
+        self.create_teams()
+        self.create_membership()
+        self.create_projects()
 
 
-        print('Creating teams: team_patata')
-        print('Creating teams: team_cereal')
-        print('Creating teams: team_arroz')
-        print('Creating teams: team_viña')
-        print('Creating Membership: team_patata - superadminUser - creator')
-        print('Creating Membership: team_viña - adminUser - admin')
-        print('Creating projects: proyecto_cultivos_herbaceos')
-        print('Creating projects: proyecto_cultivos_leñosos')
-        print('Creating assignations: proyecto_cultivos_herbaceos - team_patata')
-        print('Creating assignations: proyecto_cultivos_herbaceos - team_arroz')
-        print('Creating assignations: proyecto_cultivos_herbaceos - team_cereal')
-        print('Creating assignations: proyecto_cultivos_leñosos - team_viña')
-        print('Creating categories: vectorial')
-        print('Creating categories: farms')
-        print('Creating geojson: sample_file1.txt - featurecollection')
-        print('Creating classification: sample_file1.txt - farms')
-        print('Creating classification: sample_file1.txt - vectorial')
+
+
+
         print('Creating folder: input')
         print('Creating folder: input/type1')
         print('Creating folder: input/type2')
