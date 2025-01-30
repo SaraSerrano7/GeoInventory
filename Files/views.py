@@ -7,6 +7,7 @@ import json
 # Create your views here.
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.gis.geos import GEOSGeometry
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
@@ -14,7 +15,8 @@ from django.views.decorators.http import require_http_methods
 
 from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
-    Classification, GeoJSON, GEOJSON_TYPE_CHOICES
+    Classification, GeoJSON, GEOJSON_TYPE_CHOICES, GeoJSONFeature, PropertyAttribute, GeoJSONFeatureProperties
+from shapely.geometry import shape
 
 
 # @login_required
@@ -210,14 +212,39 @@ def upload_file(request):
             geometry = geojson_data['geometry']
             geometry_type = geometry["type"]
             coordinates = geometry["coordinates"]
+
             # TODO create GeoJSONFeature geojson_file - geometry_type - geometry
+
+            feature = shape({
+                "type": geometry_type,
+                "coordinates": coordinates
+            })
+            geojsonfeature = GeoJSONFeature.objects.create(
+                file=geojson_file,
+                feature_type=geometry_type,
+                geometry=GEOSGeometry(feature.wkt)
+            )
+
+
             properties = geojson_data['properties']
             for (key, value) in properties.items():
                 attribute_name = key
                 attribute_type = type(json.loads(f'"{value}"'))
                 attribute_value = value
         #       TODO create PropertyAttribute attribute_name - attribute_type
+                propertyAttribute = PropertyAttribute.objects.create(
+                    attribute_name=attribute_name,
+                    attribute_type=attribute_type
+                )
+
+
         #       TODO create GeoJSONFeatureProperties GeoJSONFeature - PropertyAttribute - attribute_value
+                geojsonFeatureProperty = GeoJSONFeatureProperties.objects.create(
+                    feature=geojsonfeature,
+                    attribute=propertyAttribute,
+                    attribute_value=attribute_value
+                )
+
         else:
             for feature in geojson_data['features']:
                 # TODO
@@ -260,7 +287,7 @@ def upload_file(request):
                 
         '''
 
-        return JsonResponse({'test': 'test'}, status=200)
+        return JsonResponse({'status': 'success'}, status=200)
     except json.JSONDecodeError as e:
         return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
     except Exception as e:
@@ -295,7 +322,7 @@ def get_project_folders(request, project_name=None):
 
         # Convert to list of dicts with path and empty status
         folder_list = [{
-            'path': location.located_folder.path,
+            'path': location.located_folder.path if location.located_folder else '',
             'is_empty': location.located_file is None  # Assuming you have a related_name='files' on your File model
         } for location in locations]
 

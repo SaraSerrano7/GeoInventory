@@ -89,6 +89,7 @@ dependencies:
   - qhull=2020.2=hdb19cb5_2
   - readline=8.2=h5eee18b_0
   - setuptools=75.1.0=py312h06a4308_0
+  - shapely=2.0.5=py312h1789038_0
   - sqlite=3.45.3=h5eee18b_0
   - sqlparse=0.4.4=py312h06a4308_0
   - tbb=2021.8.0=hdb19cb5_0
@@ -104,6 +105,7 @@ dependencies:
   - pip:
       - astroid==3.3.8
       - dill==0.3.9
+      - django-polymorphic==3.1.0
       - isort==5.13.2
       - mccabe==0.7.0
       - platformdirs==4.3.6

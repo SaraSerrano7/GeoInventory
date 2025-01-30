@@ -697,16 +697,21 @@ async function startUpload() {
             });
 
             const result = await response.json();
+            console.log('upload result', result)
+            console.log('upload response', response)
 
             if (response.ok && result.status === 'success') {
+                console.log('todo gucci')
                 selectedFiles[i].status = 'success';
                 selectedFiles[i].fileId = result.fileId;
             } else {
+                console.log('caca de la vaca')
                 selectedFiles[i].status = 'error';
                 selectedFiles[i].errorMessage = result.message || 'Upload failed';
                 hasFailures = true;
             }
         } catch (error) {
+            console.log('ha habido error', error)
             selectedFiles[i].status = 'error';
             selectedFiles[i].errorMessage = 'Network error';
             hasFailures = true;
@@ -715,10 +720,13 @@ async function startUpload() {
         uploadResults.push({...selectedFiles[i]});  // Store the result
     }
 
+    console.log('uploadResults', uploadResults)
+
     // Replace selectedFiles with the results to avoid duplication
     selectedFiles = uploadResults;
 
     const allFailed = selectedFiles.every(file => file.status === 'error');
+    console.log('de super puta madre socio', allFailed)
 
     if (allFailed) {
         showWarningModal('All uploads failed. Would you like to retry?');
