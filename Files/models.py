@@ -185,8 +185,8 @@ class Folder(DigitalResource):
     path = models.CharField(
         max_length=255,
         editable=False,
-        unique=True,
-        default=name
+        # unique=True,
+        default=''
     )
 
     # info = models.ManyToManyField(DigitalResource, related_name='folder_info')
@@ -199,7 +199,7 @@ class Folder(DigitalResource):
         return f"{self.path}"
 
     def save(self, *args, **kwargs):
-        self.build_path()
+        self.path = self.build_path()
         super().save(*args, **kwargs)
 
     # @property
@@ -225,7 +225,7 @@ class Location(DigitalResource):
         Folder, on_delete=models.SET_NULL, null=True, blank=True)
     # info = models.ManyToManyField(DigitalResource, related_name='location_info')
 
-    path = models.CharField(max_length=1024, editable=False)
+    path = models.CharField(max_length=1024, editable=False, default='')
 
     def save(self, *args, **kwargs):
         # Build the full path dynamically

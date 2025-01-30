@@ -2,10 +2,12 @@ from typing import Type
 
 from astroid.interpreter.objectmodel import ObjectModel
 from django.contrib.auth.models import User
+from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-from Files.models import Role, Team, Membership, Project
+from Files.models import Role, Team, Membership, Project, Assignations, Category, Classification, GeoJSON, \
+    File, Folder, Location, GeoJSONFeature, GeoJSONFeatureProperties, PropertyAttribute
 from Management.models import GlobalRole, GlobalMembership
 
 
@@ -140,7 +142,7 @@ class Command(BaseCommand):
             {"name": "team_patata"},
             {"name": "team_arroz"},
             {"name": "team_cereal"},
-            {"name": "team_viña"},
+            {"name": "team_olivo"},
         ]
         self.create_objects(notice_message, teams_data, Team)
 
@@ -163,23 +165,23 @@ class Command(BaseCommand):
         team_patata = Team.objects.get(name='team_patata')
         team_arroz = Team.objects.get(name='team_arroz')
         team_cereal = Team.objects.get(name='team_cereal')
-        team_viña = Team.objects.get(name='team_viña')
+        team_olivo = Team.objects.get(name='team_olivo')
 
         membership_data = [
             {"member": superadmin_user, "user_role": admin_role, "user_team": team_patata},
             {"member": superadmin_user, "user_role": admin_role, "user_team": team_arroz},
             {"member": superadmin_user, "user_role": admin_role, "user_team": team_cereal},
-            {"member": superadmin_user, "user_role": admin_role, "user_team": team_viña},
+            {"member": superadmin_user, "user_role": admin_role, "user_team": team_olivo},
 
             {"member": admin_user, "user_role": admin_role, "user_team": team_patata},
 
             {"member": creator_user, "user_role": creator_role, "user_team": team_patata},
-            {"member": creator_user, "user_role": creator_role, "user_team": team_viña},
+            {"member": creator_user, "user_role": creator_role, "user_team": team_olivo},
 
             {"member": viewer_user, "user_role": viewer_role, "user_team": team_patata},
-            {"member": viewer_user, "user_role": viewer_role, "user_team": team_viña},
+            {"member": viewer_user, "user_role": viewer_role, "user_team": team_olivo},
 
-            {"member": guest_user, "user_role": guest_role, "user_team": team_viña},
+            {"member": guest_user, "user_role": guest_role, "user_team": team_olivo},
         ]
         self.create_objects(notice_message, membership_data, Membership)
 
@@ -187,51 +189,192 @@ class Command(BaseCommand):
         notice_message = "Checking projects..."
 
         projects_data = [
-            {"name": "proyecto_cultivo_herbaceos"},
-            {"name": "proyecto_cultivo_leñosos"},
+            {"name": "proyecto_cultivos_herbaceos"},
+            {"name": "proyecto_cultivos_leñosos"},
         ]
         self.create_objects(notice_message, projects_data, Project)
 
     def create_assignations(self):
-        print('Creating assignations: proyecto_cultivos_herbaceos - team_patata')
-        print('Creating assignations: proyecto_cultivos_herbaceos - team_arroz')
-        print('Creating assignations: proyecto_cultivos_herbaceos - team_cereal')
-        print('Creating assignations: proyecto_cultivos_leñosos - team_viña')
+
+        notice_message = "Checking assignations..."
+
+        project1 = Project.objects.get(name="proyecto_cultivos_herbaceos")
+        project2 = Project.objects.get(name="proyecto_cultivos_leñosos")
+        team_patata = Team.objects.get(name="team_patata")
+        team_arroz = Team.objects.get(name="team_arroz")
+        team_cereal = Team.objects.get(name="team_cereal")
+        team_olivo = Team.objects.get(name="team_olivo")
+
+        assignations_data = [
+            {"assignated_project": project1, "assignated_team": team_patata},
+            {"assignated_project": project1, "assignated_team": team_arroz},
+            {"assignated_project": project1, "assignated_team": team_cereal},
+            {"assignated_project": project2, "assignated_team": team_olivo},
+        ]
+        self.create_objects(notice_message, assignations_data, Assignations)
 
     def create_categories(self):
-        print('Creating categories: vectorial')
-        print('Creating categories: farms')
+        notice_message = "Checking categories..."
 
-    def create_classifications(self):
-        print('Creating classification: sample_file1.txt - farms')
-        print('Creating classification: sample_file1.txt - vectorial')
+        categories_data = [
+            {"label": "Farms"},
+            {"label": "Vectorial"},
+        ]
+        self.create_objects(notice_message, categories_data, Category)
 
     def create_geojson(self):
-        print('Creating geojson: sample_file1.txt - featurecollection')
+        notice_message = "Checking geojsons..."
+
+        geojson_data = [
+            {"name": "example.geojson", "content_type": 1},
+        ]
+        self.create_objects(notice_message, geojson_data, GeoJSON)
+
+    def create_classifications(self):
+        notice_message = "Checking classifications..."
+
+        farm_category = Category.objects.get(label='Farms')
+        vectorial_category = Category.objects.get(label='Vectorial')
+
+        geojson = GeoJSON.objects.get(name="example.geojson", content_type=1)
+        file_instance = File.objects.get(id=geojson.id)
+
+        categories_data = [
+            {"category_name": farm_category, "related_file": file_instance},
+            {"category_name": vectorial_category, "related_file": file_instance},
+        ]
+        self.create_objects(notice_message, categories_data, Classification)
 
     def create_folders(self):
-        print('Creating folder: input')
-        print('Creating folder: input/type1')
-        print('Creating folder: input/type2')
-        print('Creating folder: input/type2/subtype1')
+
+        notice_message = "Checking folders..."
+
+        folder_data = [
+            {"name": 'input', "parent": None},
+        ]
+
+        self.create_objects(notice_message, folder_data, Folder)
+        ###########
+        parent = Folder.objects.get(**folder_data[0])
+
+        subfolders_data = [
+            {"name": 'type1', "parent": parent},
+            {"name": 'type2', "parent": parent},
+        ]
+
+        self.create_objects(notice_message, subfolders_data, Folder)
+
+        ###########
+        subparent = Folder.objects.get(**subfolders_data[1])
+
+        subsubfolders_data = [
+            {"name": 'subtype1', "parent": subparent},
+            {"name": 'subtype2', "parent": subparent},
+        ]
+
+        self.create_objects(notice_message, subsubfolders_data, Folder)
 
     def create_locations(self):
-        print('Creating location: proyecto_cultivos_herbaceos - input/type1 - sample_file1.txt')
-        print('Creating location: proyecto_cultivos_herbaceos - input/type2/subtype1 - sample_file1.txt')
+
+        notice_message = "Checking locations..."
+
+        geojson = GeoJSON.objects.get(name="example.geojson", content_type=1)
+        file_instance = File.objects.get(id=geojson.id)
+
+        folder1 = Folder.objects.get(path="input")
+        folder2 = Folder.objects.get(path="input/type1")
+        folder3 = Folder.objects.get(path="input/type2/subtype2")
+
+        project1 = Project.objects.get(name="proyecto_cultivos_herbaceos")
+        project2 = Project.objects.get(name="proyecto_cultivos_leñosos")
+
+        locations_data = [
+            {"located_file": file_instance, "located_folder": folder1, "located_project": project1},
+            {"located_file": file_instance, "located_folder": folder2, "located_project": project2},
+            {"located_file": file_instance, "located_folder": folder3, "located_project": project1},
+        ]
+
+        self.create_objects(notice_message, locations_data, Location)
 
     def create_geojsonfeature(self):
-        print('Creating geojsonfeature: file1 - multipolygon - polygon1')
-        print('Creating geojsonfeature: file1 - multipolygon - polygon2')
 
-    def create_geojsonfeatureproperty(self):
-        print('Creating feature property: feature1 - atribute1 - value')
-        print('Creating feature property: feature1 - atribute2 - value')
-        print('Creating feature property: feature2 - atribute3 - value')
+        notice_message = "Checking geojson features..."
+
+        geojson = GeoJSON.objects.get(name="example.geojson", content_type=1)
+        file_instance = File.objects.get(id=geojson.id)
+
+        polygon1 = Polygon((
+            (-3.68275, 40.41525), (-3.68024, 40.41487),
+            (-3.68024, 40.41802), (-3.68275, 40.41843),
+            (-3.68275, 40.41525)
+        ))
+
+        polygon2 = Polygon((
+            (-3.7451, 40.4196), (-3.7359, 40.4196),
+            (-3.7359, 40.4259), (-3.7451, 40.4259),
+            (-3.7451, 40.4196)
+        ))
+
+        multipolygon1 = MultiPolygon(polygon1, polygon2)
+
+        ################
+
+        polygon1 = Polygon((
+            (0.0420, 42.6798), (0.0478, 42.6798),
+            (0.0478, 42.6843), (0.0420, 42.6843),
+            (0.0420, 42.6798)
+        ))
+
+        polygon2 = Polygon(
+            ((0.0550, 42.6850), (0.0600, 42.6850),
+             (0.0600, 42.6900), (0.0550, 42.6900),
+             (0.0550, 42.6850)),  # Contorno exterior
+            ((0.0565, 42.6865), (0.0585, 42.6865),
+             (0.0585, 42.6885), (0.0565, 42.6885),
+             (0.0565, 42.6865))  # Hueco interior
+        )
+
+        multipolygon2 = MultiPolygon(polygon1, polygon2)
+
+        features_data = [
+            {"feature_type": 4, "geometry": multipolygon1, "file": geojson},
+            {"feature_type": 4, "geometry": multipolygon2, "file": geojson},
+        ]
+
+        self.create_objects(notice_message, features_data, GeoJSONFeature)
 
     def create_propertyattribute(self):
-        print('Creating feature attribute1: cropname - string')
-        print('Creating feature attribute2: owner - string')
-        print('Creating feature attribute3: yield - int')
+        notice_message = "Checking properties attributes..."
+
+        attributes_data = [
+            {"attribute_name": "crop", "attribute_type": "string"},
+            {"attribute_name": "owner", "attribute_type": "string"},
+            {"attribute_name": "yield", "attribute_type": "int"},
+        ]
+
+        self.create_objects(notice_message, attributes_data, PropertyAttribute)
+
+    def create_geojsonfeatureproperty(self):
+
+        notice_message = "Checking feature properties..."
+
+        geojson = GeoJSON.objects.get(name="example.geojson", content_type=1)
+        file_instance = File.objects.get(id=geojson.id)
+
+        feature1 = GeoJSONFeature.objects.get(id=1)
+        feature2 = GeoJSONFeature.objects.get(id=2)
+
+        attribute1 = PropertyAttribute.objects.get(attribute_name="crop")
+        attribute2 = PropertyAttribute.objects.get(attribute_name="owner")
+        attribute3 = PropertyAttribute.objects.get(attribute_name="yield")
+
+        properties_data = [
+            {"feature": feature1, "attribute": attribute1, "attribute_value": file_instance},
+            {"feature": feature1, "attribute": attribute2, "attribute_value": file_instance},
+            {"feature": feature2, "attribute": attribute3, "attribute_value": file_instance},
+        ]
+
+        self.create_objects(notice_message, properties_data, GeoJSONFeatureProperties)
 
     def db_autofill(self):
         self.chech_postgis_extensions()
@@ -242,20 +385,15 @@ class Command(BaseCommand):
         self.create_teams()
         self.create_membership()
         self.create_projects()
-
-        ##############
-
         self.create_assignations()
         self.create_categories()
-        self.create_classifications()
         self.create_geojson()
+        self.create_classifications()
         self.create_folders()
         self.create_locations()
         self.create_geojsonfeature()
-        self.create_geojsonfeatureproperty()
         self.create_propertyattribute()
-
-
+        self.create_geojsonfeatureproperty()
 
     def handle(self, *args, **options):
         self.db_autofill()
