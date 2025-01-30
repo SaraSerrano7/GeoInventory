@@ -14,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 
 from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
-    Classification, GeoJSON, GeoJSONFeature, GeoJSONFeatureProperties, PropertyAttribute, GEOJSON_TYPE_CHOICES, GEOJSON_ATTR_TYPE_CHOICES, GEOJSON_GEOMETRY_TYPE_CHOICES
+    Classification, GeoJSON, GEOJSON_TYPE_CHOICES
 
 
 # @login_required
@@ -23,7 +23,7 @@ def homepageView(request):
     Main view where the user interacts with the Files app
     """
     # available_files = File.count_all_existing_files()
-    # TODO: ficheros relacionados con proyectos no archivados que el usuario está asignado
+    # TODO: ficheros relacionados con proyectos no archivados que el usuario está asignado, no ficheros que haya creado el usuario
     user_files = File.count_user_files(request.user)
 
     # proyectos en los que está asignado el usuario
@@ -210,13 +210,14 @@ def upload_file(request):
             geometry = geojson_data['geometry']
             geometry_type = geometry["type"]
             coordinates = geometry["coordinates"]
-            # TODO create geometry
+            # TODO create GeoJSONFeature geojson_file - geometry_type - geometry
             properties = geojson_data['properties']
             for (key, value) in properties.items():
                 attribute_name = key
-                attribute_type = type(json.loads(value))
+                attribute_type = type(json.loads(f'"{value}"'))
                 attribute_value = value
-        #         TODO create feature and content
+        #       TODO create PropertyAttribute attribute_name - attribute_type
+        #       TODO create GeoJSONFeatureProperties GeoJSONFeature - PropertyAttribute - attribute_value
         else:
             for feature in geojson_data['features']:
                 # TODO

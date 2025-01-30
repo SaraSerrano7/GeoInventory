@@ -23,3 +23,4 @@
 13. Run `python3 manage.py makemigrations`
 14. Run `python3 manage.py migrate`
 15. Run `python3 manage.py db_autofill` to populate db with sample data
+16. Run `python3 manage.py runserver` to execute app 

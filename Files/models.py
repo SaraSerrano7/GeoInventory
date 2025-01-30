@@ -35,7 +35,7 @@ class DigitalResource(models.Model):  # PolymorphicModel
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return self.pk
+        return "self.pk"
 
 
 ###############
@@ -307,12 +307,6 @@ class GeoJSONFeature(models.Model):
     feature_type = models.CharField(max_length=50, choices=GEOJSON_GEOMETRY_TYPE_CHOICES)
     geometry = models.GeometryField(null=True, blank=True)
 
-    # properties = models.ManyToManyField(GeoJSONFeatureProperties, related_name='GeoJSONFeaturePropertiesDescription')
-
-    # attribute_name = models.CharField(max_length=100)
-    # attribute_type = models.CharField(max_length=50, choices=GEOJSON_ATTR_TYPE_CHOICES)
-    # attribute_value = models.CharField(max_length=250)
-
     def __str__(self):
         return str(self.feature_type) + str(self.pk)
 
@@ -332,23 +326,3 @@ class GeoJSONFeatureProperties(models.Model):
 
     def __str__(self):
         return f"{self.attribute} = {self.attribute_value}"
-
-# class GeoJSONContent(models.Model):
-#     """
-#     Class to represent the features contained in a GeoJSON file
-#     """
-#     geojson_file = models.ForeignKey(GeoJSON, null=True, blank=True, on_delete=models.SET_NULL)
-#     feature = models.ForeignKey(GeoJSONFeature, null=True, blank=True, on_delete=models.SET_NULL)
-
-
-# class Shapefile(File):
-#     """
-#     Class to represent a Shapefile filetype
-#     Warning: not implemented yet.
-#     """
-#     # geometry =
-#     geometry_type = models.CharField(max_length=50, choices=GEOMETRY_CHOICES)
-#     properties = models.JSONField()
-#
-#     def __str__(self):
-#         return str(self.name)

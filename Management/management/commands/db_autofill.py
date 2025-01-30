@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 
 from Files.models import Role, Team, Membership, Project, Assignations, Category, Classification, GeoJSON, \
-    File, Folder, Location, GeoJSONFeature, GeoJSONFeatureProperties, PropertyAttribute
+    File, Folder, Location, GeoJSONFeature, GeoJSONFeatureProperties, PropertyAttribute, Access
 from Management.models import GlobalRole, GlobalMembership
 
 
@@ -245,6 +245,21 @@ class Command(BaseCommand):
         ]
         self.create_objects(notice_message, categories_data, Classification)
 
+    def create_accesses(self):
+        notice_message = "Checking accesses..."
+
+        geojson = GeoJSON.objects.get(name="example.geojson", content_type=1)
+        file_instance = File.objects.get(id=geojson.id)
+
+        team_patata = Team.objects.get(name="team_patata")
+        team_olivo = Team.objects.get(name="team_olivo")
+
+        categories_data = [
+            {"accessed_file": file_instance, "accessing_team": team_patata},
+            {"accessed_file": file_instance, "accessing_team": team_olivo},
+        ]
+        self.create_objects(notice_message, categories_data, Access)
+
     def create_folders(self):
 
         notice_message = "Checking folders..."
@@ -389,6 +404,7 @@ class Command(BaseCommand):
         self.create_categories()
         self.create_geojson()
         self.create_classifications()
+        self.create_accesses()
         self.create_folders()
         self.create_locations()
         self.create_geojsonfeature()
