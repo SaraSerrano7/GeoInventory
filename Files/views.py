@@ -3,6 +3,7 @@ Files' app views to develop file management functions
 """
 
 import json
+import os
 
 # Create your views here.
 from django.contrib.auth.decorators import login_required
@@ -193,7 +194,26 @@ def upload_file(request):
         else:
             # TODO folder nueva
             # TODO subfolder de folder nueva
-            folder = Folder.objects.get(path=file_location)
+            folder = Folder.objects.filter(path=file_location)
+            if not folder.exists():
+                # si estamos aqui, la folder no es Project root
+                # pero puede tener parents
+                file_location_path = file_location.split('/')
+                if len(file_location_path) == 1 or (len(file_location_path) == 2 and file_location_path[0] == file_project):
+                    name = file_location_path[1] if len(file_location_path) == 2 else file_location_path[0]
+                    folder = Folder.objects.create(name=name, parent=None)
+                else:
+
+
+
+                    # def getFolderParent(folder_name):
+
+                    folder = build(file_location_path)
+
+
+                    # Folder.objects.create(name=???, parent=???)
+            else:
+                folder = folder.first()
             location = Location.objects.create(
                 located_folder=folder,
                 located_project=project,
@@ -296,6 +316,39 @@ def upload_file(request):
             'message': str(e)
         }, status=500)
 
+
+def create_folder(name, parent):
+    return Folder.objects.create(name=name, parent=parent)
+
+
+def folderExists(name, path):
+    return Folder.objects.filter(name=name, path=path).exists()
+
+
+
+def build(file_location_path):
+    parent = file_location_path[:-1] if len(file_location_path) > 2 else file_location_path[:-1]
+
+    # if len(parent) == 1:
+    # aqui hemos llegado a la subcarpeta antes de raiz
+    parent_name = parent[0] if len(parent) == 1 else parent[-2]
+    parent_path = parent_name#None
+
+    # else:
+    if len(parent) > 1:
+        # TODO TEST
+        # parent_path = os.path.join(file_location_path[:-4], parent)
+        new_parent = build(parent)
+        parent_path = new_parent.path
+        parent_name = new_parent.name
+
+
+    if not folderExists(parent_name, parent_path):
+        parent = create_folder(parent_name, parent_path)
+    else:
+        parent = Folder.objects.filter(name=parent_name, path=parent_path).first()
+    folder = create_folder(file_location_path[-1], parent)
+    return folder
 
 @login_required
 @require_http_methods(["GET"])
