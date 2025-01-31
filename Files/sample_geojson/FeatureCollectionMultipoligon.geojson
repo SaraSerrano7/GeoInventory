@@ -8,24 +8,30 @@
         "coordinates": [
           [
             [
-              [-100.0, 40.0],
-              [-101.0, 39.0],
-              [-102.0, 40.0],
-              [-100.0, 40.0]
+              [-3.68834, 40.41942],
+              [-3.68992, 40.41762],
+              [-3.68650, 40.41680],
+              [-3.68452, 40.41853],
+              [-3.68834, 40.41942]
             ]
           ],
           [
             [
-              [-103.0, 41.0],
-              [-104.0, 40.0],
-              [-105.0, 41.0],
-              [-103.0, 41.0]
+              [-3.70458, 40.41737],
+              [-3.70610, 40.41562],
+              [-3.70280, 40.41430],
+              [-3.70112, 40.41615],
+              [-3.70458, 40.41737]
             ]
           ]
         ]
       },
       "properties": {
-        "name": "MultiPolígono 1"
+        "name": "MultiPolígono 1 - Puerta del Sol y Plaza Mayor",
+        "city": "Madrid",
+        "country": "España",
+        "area_m2": 6500,
+        "description": "Dos polígonos que cubren la Puerta del Sol y la Plaza Mayor en Madrid."
       }
     },
     {
@@ -35,16 +41,21 @@
         "coordinates": [
           [
             [
-              [-106.0, 43.0],
-              [-107.0, 42.0],
-              [-108.0, 43.0],
-              [-106.0, 43.0]
+              [-3.71543, 40.42402],
+              [-3.71710, 40.42280],
+              [-3.71352, 40.42150],
+              [-3.71183, 40.42325],
+              [-3.71543, 40.42402]
             ]
           ]
         ]
       },
       "properties": {
-        "name": "MultiPolígono 2"
+        "name": "MultiPolígono 2 - Palacio Real",
+        "city": "Madrid",
+        "country": "España",
+        "area_m2": 5000,
+        "description": "Área que rodea el Palacio Real de Madrid."
       }
     }
   ]

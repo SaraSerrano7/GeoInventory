@@ -4,24 +4,30 @@
     "type": "MultiPolygon",
     "coordinates": [
       [
-        [  // Primer polígono
-          [-100.0, 40.0],
-          [-101.0, 39.0],
-          [-102.0, 40.0],
-          [-100.0, 40.0]
+        [  // Primer polígono (Retiro)
+          [-3.68333, 40.41551],
+          [-3.68700, 40.41252],
+          [-3.68123, 40.41076],
+          [-3.67788, 40.41384],
+          [-3.68333, 40.41551]
         ]
       ],
       [
-        [  // Segundo polígono
-          [-103.0, 41.0],
-          [-104.0, 40.0],
-          [-105.0, 41.0],
-          [-103.0, 41.0]
+        [  // Segundo polígono (Plaza Mayor)
+          [-3.70730, 40.41565],
+          [-3.70900, 40.41400],
+          [-3.70500, 40.41250],
+          [-3.70300, 40.41450],
+          [-3.70730, 40.41565]
         ]
       ]
     ]
   },
   "properties": {
-    "name": "Ejemplo de MultiPolígono"
+    "name": "Ejemplo de MultiPolígono en Madrid",
+    "city": "Madrid",
+    "country": "España",
+    "area_m2": 50000,
+    "description": "Este multipolígono representa dos áreas icónicas de Madrid: el Parque del Retiro y la Plaza Mayor."
   }
 }

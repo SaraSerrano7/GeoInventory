@@ -7,15 +7,20 @@
         "type": "Polygon",
         "coordinates": [
           [
-            [-100.0, 40.0],
-            [-101.0, 39.0],
-            [-102.0, 40.0],
-            [-100.0, 40.0]
+            [-3.68834, 40.41942],
+            [-3.68992, 40.41762],
+            [-3.68650, 40.41680],
+            [-3.68452, 40.41853],
+            [-3.68834, 40.41942]
           ]
         ]
       },
       "properties": {
-        "name": "Polígono 1"
+        "name": "Polígono 1 - Puerta del Sol",
+        "city": "Madrid",
+        "country": "España",
+        "area_m2": 2500,
+        "description": "Área alrededor de la Puerta del Sol en Madrid."
       }
     },
     {
@@ -24,15 +29,20 @@
         "type": "Polygon",
         "coordinates": [
           [
-            [-103.0, 42.0],
-            [-104.0, 41.0],
-            [-105.0, 42.0],
-            [-103.0, 42.0]
+            [-3.70458, 40.41737],
+            [-3.70610, 40.41562],
+            [-3.70280, 40.41430],
+            [-3.70112, 40.41615],
+            [-3.70458, 40.41737]
           ]
         ]
       },
       "properties": {
-        "name": "Polígono 2"
+        "name": "Polígono 2 - Plaza Mayor",
+        "city": "Madrid",
+        "country": "España",
+        "area_m2": 4000,
+        "description": "Polígono que cubre la Plaza Mayor de Madrid."
       }
     }
   ]
