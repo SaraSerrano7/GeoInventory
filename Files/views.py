@@ -229,83 +229,12 @@ def upload_file(request):
         # Add each geojson feature
         # content_type
         if content_type == 'Feature':
-            geometry = geojson_data['geometry']
-            geometry_type = geometry["type"]
-            coordinates = geometry["coordinates"]
-
-            # TODO create GeoJSONFeature geojson_file - geometry_type - geometry
-
-            feature = shape({
-                "type": geometry_type,
-                "coordinates": coordinates
-            })
-            geojsonfeature = GeoJSONFeature.objects.create(
-                file=geojson_file,
-                feature_type=geometry_type,
-                geometry=GEOSGeometry(feature.wkt)
-            )
-
-
-            properties = geojson_data['properties']
-            for (key, value) in properties.items():
-                attribute_name = key
-                attribute_type = type(json.loads(f'"{value}"'))
-                attribute_value = value
-        #       TODO create PropertyAttribute attribute_name - attribute_type
-                propertyAttribute = PropertyAttribute.objects.create(
-                    attribute_name=attribute_name,
-                    attribute_type=attribute_type
-                )
-
-
-        #       TODO create GeoJSONFeatureProperties GeoJSONFeature - PropertyAttribute - attribute_value
-                geojsonFeatureProperty = GeoJSONFeatureProperties.objects.create(
-                    feature=geojsonfeature,
-                    attribute=propertyAttribute,
-                    attribute_value=attribute_value
-                )
+            create_feature(geojson_file, geojson_data)
 
         else:
             for feature in geojson_data['features']:
-                # TODO
+                create_feature(geojson_file, feature)
                 pass
-        '''
-        1. Create a GeoJSONFile
-            - content_type = geojson_content.type
-            - name = filename
-            
-        2. ACCESS
-            - accessed_file
-            - accessing_team = file_team
-            
-        3. FOLDER
-            (if file_location does not exist)
-            - name
-            - parent
-            
-        4. LOCATION
-            - located_file
-            - located_project
-            - located_folder
-            - path
-        
-        5. CLASSIFICATION
-            - related_file
-            - category_name
-            
-            
-        6. GEOJSONFEATURE
-            - feature_type = geojson_content.features.type
-            - geometry = geojson_content.features.coordinates
-            - attribute_name = geojson_content.properties.key
-            - attribute_type = type(geojson_content.properties.value)
-            - attribute_value = geojson_content.properties.value
-        
-        7. CONTENT
-            - geojson_file
-            - feature
-                
-        '''
 
         return JsonResponse({'status': 'success'}, status=200)
     except json.JSONDecodeError as e:
@@ -315,6 +244,42 @@ def upload_file(request):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+
+def create_feature(geojson_file, geojson_data):
+    geometry = geojson_data['geometry']
+    geometry_type = geometry["type"]
+    coordinates = geometry["coordinates"]
+
+    # TODO create GeoJSONFeature geojson_file - geometry_type - geometry
+
+    feature = shape({
+        "type": geometry_type,
+        "coordinates": coordinates
+    })
+    geojsonfeature = GeoJSONFeature.objects.create(
+        file=geojson_file,
+        feature_type=geometry_type,
+        geometry=GEOSGeometry(feature.wkt)
+    )
+
+    properties = geojson_data['properties']
+    for (key, value) in properties.items():
+        attribute_name = key
+        attribute_type = type(json.loads(f'"{value}"'))
+        attribute_value = value
+        #       TODO create PropertyAttribute attribute_name - attribute_type
+        propertyAttribute = PropertyAttribute.objects.create(
+            attribute_name=attribute_name,
+            attribute_type=attribute_type
+        )
+
+        #       TODO create GeoJSONFeatureProperties GeoJSONFeature - PropertyAttribute - attribute_value
+        geojsonFeatureProperty = GeoJSONFeatureProperties.objects.create(
+            feature=geojsonfeature,
+            attribute=propertyAttribute,
+            attribute_value=attribute_value
+        )
 
 
 def create_folder(name, parent):
