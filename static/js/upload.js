@@ -60,7 +60,6 @@ async function updateFileCategory(fileIndex) {
         });
 
         const categories = await response.json();
-        console.log('categories', categories)
 
         const categorySelect = document.querySelector(`select[id="categories-${fileIndex}"]`);
 
@@ -220,6 +219,8 @@ async function displayFiles() {
             </option>`
         ).join('');
 
+        console.log(fileData.status)
+
         fileItem.innerHTML = `
             <div class="file-header">
                 <i class="fas fa-file"></i>
@@ -230,11 +231,11 @@ async function displayFiles() {
                            class="file-name-field"
                            title="Original filename: ${fileData.file.name}">
                 </div>
-                <div class="status-container" ${!fileData.status ? 'style="display: none;"' : ''}>
-                    <span class="status-label">Status:</span>
-                    ${getStatusIcon(fileData.status)}
-                </div>
-                <button onclick="removeFile('${fileData.id}')" class="remove-file-btn">
+                    <div class="status-container" >
+                        <span class="status-label">Status:</span>
+                        ${getStatusIcon(fileData.status)}
+                    </div>
+                <button id='removeFileButton' onclick="removeFile('${fileData.id}')" ${fileData.status === 'success' ? 'style="display: none;"' : ''} class="remove-file-btn">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -288,7 +289,7 @@ async function displayFiles() {
         `;
         fileList.appendChild(fileItem);
 
-        if(currentProject !== 'Project Root') {
+        if (currentProject !== 'Project Root') {
             updateFileTeams(index, currentProject)
             updateFileCategory(index)
         } else {
@@ -302,7 +303,7 @@ async function displayFiles() {
 
 function generateFolderTree(fileData, path, fileIndex) {
 
-     if (!fileData.folderStructure) {
+    if (!fileData.folderStructure) {
         fileData.folderStructure = {
             root: {
                 name: 'Project Root',
@@ -572,7 +573,6 @@ function confirmUpload() {
 }
 
 function validateFileUploads() {
-    console.log('staring validation')
     let hasErrors = false;
     const errorMessages = [];
 
@@ -581,26 +581,22 @@ function validateFileUploads() {
         if (!fileData.fileName.toLowerCase().endsWith('.geojson')) {
             errorMessages.push(`File ${index + 1}: Must be a .geojson file`);
             hasErrors = true;
-            console.log('not geojson')
         }
 
         // Check project selection
         if (fileData.projects.length === 0) {
             errorMessages.push(`File ${index + 1}: Project must be selected`);
             hasErrors = true;
-            console.log('no project')
         }
 
         // Check team selection
         if (fileData.teams.length === 0) {
             errorMessages.push(`File ${index + 1}: At least one team must be selected`);
             hasErrors = true;
-            console.log('no team')
         }
     });
     // Display errors or proceed with upload
     if (hasErrors) {
-        console.log('showing errors')
         showValidationErrorModal(errorMessages);
         return false;
     }
@@ -610,7 +606,6 @@ function validateFileUploads() {
 
 
 function showValidationErrorModal(errors) {
-    console.log('popup')
     // hideUploadConfirmation();
     const errorModal = document.createElement('div');
     errorModal.className = 'validation-error-modal';
@@ -628,7 +623,6 @@ function showValidationErrorModal(errors) {
 
 
 function closeValidationErrorModal() {
-    console.log('closing error popup')
     const errorModal = document.querySelector('.validation-error-modal');
     if (errorModal) {
         errorModal.remove();
@@ -663,17 +657,12 @@ async function startUpload() {
 
         // Read and append GeoJSON content
         try {
-            console.log('selectedFile', selectedFiles)
             const geojsonText = await selectedFiles[i].file.text();
-            console.log('geojsonText', geojsonText)
-
-            console.log('formData before adding content', formData)
-
             // formData.append('geojson_content', geojsonText);
             formData.append(
                 "geojson_file",
                 new Blob([geojsonText],
-                { type: "application/json" }),
+                    {type: "application/json"}),
                 selectedFiles[i].fileName
             );
 
@@ -685,7 +674,6 @@ async function startUpload() {
             hasFailures = true;
             continue;
         }
-        console.log('formData after adding content', formData)
 
         try {
             const response = await fetch('/api/upload/', {
@@ -697,21 +685,16 @@ async function startUpload() {
             });
 
             const result = await response.json();
-            console.log('upload result', result)
-            console.log('upload response', response)
 
             if (response.ok && result.status === 'success') {
-                console.log('todo gucci')
                 selectedFiles[i].status = 'success';
                 selectedFiles[i].fileId = result.fileId;
             } else {
-                console.log('caca de la vaca')
                 selectedFiles[i].status = 'error';
                 selectedFiles[i].errorMessage = result.message || 'Upload failed';
                 hasFailures = true;
             }
         } catch (error) {
-            console.log('ha habido error', error)
             selectedFiles[i].status = 'error';
             selectedFiles[i].errorMessage = 'Network error';
             hasFailures = true;
@@ -720,13 +703,10 @@ async function startUpload() {
         uploadResults.push({...selectedFiles[i]});  // Store the result
     }
 
-    console.log('uploadResults', uploadResults)
-
     // Replace selectedFiles with the results to avoid duplication
     selectedFiles = uploadResults;
 
     const allFailed = selectedFiles.every(file => file.status === 'error');
-    console.log('de super puta madre socio', allFailed)
 
     if (allFailed) {
         showWarningModal('All uploads failed. Would you like to retry?');
@@ -738,6 +718,9 @@ async function startUpload() {
         document.getElementById('retryFailedButton').style.display = 'block';
     } else {
         document.getElementById('continueButton').style.display = 'block';
+        document.getElementById('cancelButton').style.display = 'none';
+        document.getElementById('cancelUploadButton').style.display = 'none';
+        document.getElementById('selectFiles').style.display = 'none';
     }
 
     await displayFiles();

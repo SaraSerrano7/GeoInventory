@@ -246,12 +246,12 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>Upload Files</h2>
-            <button onclick="showCancelConfirmation()" class="btn btn-secondary">&times;</button>
+            <button id="cancelUploadButton" onclick="showCancelConfirmation()" class="btn btn-secondary">&times;</button>
         </div>
 
         <div class="modal-body">
             <input type="file" id="fileInput" multiple style="display: none" onchange="handleFileSelect(event)">
-            <button onclick="document.getElementById('fileInput').click()" class="btn btn-primary">
+            <button id="selectFiles" onclick="document.getElementById('fileInput').click()" class="btn btn-primary">
                 <i class="fas fa-upload"></i> Select Files
             </button>
 
@@ -261,7 +261,7 @@
         </div>
 
         <div class="modal-footer">
-            <button onclick="showCancelConfirmation()" class="btn btn-secondary">Cancel</button>
+            <button id="cancelButton" onclick="showCancelConfirmation()" class="btn btn-secondary">Cancel</button>
             <button onclick="confirmUpload()" id="uploadButton" class="btn btn-primary" style="display: none;">
                 Upload All Files
             </button>
