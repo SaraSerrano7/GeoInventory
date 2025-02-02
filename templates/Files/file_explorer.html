@@ -1,9 +1,50 @@
+{#<div class="file-explorer">#}
+{#    <div class="file-explorer-header">#}
+{#        File Explorer#}
+{#    </div>#}
+{#    <div class="no-files-message">#}
+{#        {{ available_files }} files available#}
+{#    </div>#}
+{#</div>#}
+{##}
+
+
 <div class="file-explorer">
     <div class="file-explorer-header">
         File Explorer
+        <span id="selected-count" class="selected-count" style="display: none;"></span>
     </div>
-    <div class="no-files-message">
-        {{ available_files }} files available
+    <div id="file-tree" class="file-tree">
+        <!-- File tree will be populated here -->
+    </div>
+    <div id="action-buttons" class="action-buttons" style="display: none;">
+        <button id="view-data-btn" class="btn btn-primary">
+            <i class="fas fa-eye"></i> View Data
+        </button>
+        <button id="analyze-data-btn" class="btn btn-primary">
+            <i class="fas fa-chart-bar"></i> Analyze Data
+        </button>
     </div>
 </div>
+
+
+<!-- Analysis Modal -->
+{#<div id="analysis-modal" class="modal">#}
+{#    <div class="modal-content">#}
+{#        <div class="modal-header">#}
+{#            <h3>Choose Analysis Type</h3>#}
+{#            <button class="close-modal">&times;</button>#}
+{#        </div>#}
+{#        <div class="modal-body">#}
+{#            <select id="analysis-type" class="analysis-select">#}
+{#                <option value="">Select an analysis type...</option>#}
+{#                <option value="select_content">Select Content</option>#}
+{#            </select>#}
+{#        </div>#}
+{#        <div class="modal-footer">#}
+{#            <button class="btn btn-secondary close-modal">Cancel</button>#}
+{#            <button id="perform-analysis-btn" class="btn btn-primary">Analyze</button>#}
+{#        </div>#}
+{#    </div>#}
+{#</div>#}
 

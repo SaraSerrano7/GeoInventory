@@ -3,7 +3,6 @@ Files' app views to develop file management functions
 """
 
 import json
-import os
 
 # Create your views here.
 from django.contrib.auth.decorators import login_required
@@ -13,11 +12,11 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
+from shapely.geometry import shape
 
 from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
     Classification, GeoJSON, GEOJSON_TYPE_CHOICES, GeoJSONFeature, PropertyAttribute, GeoJSONFeatureProperties
-from shapely.geometry import shape
 
 
 # @login_required
@@ -199,17 +198,15 @@ def upload_file(request):
                 # si estamos aqui, la folder no es Project root
                 # pero puede tener parents
                 file_location_path = file_location.split('/')
-                if len(file_location_path) == 1 or (len(file_location_path) == 2 and file_location_path[0] == file_project):
+                if len(file_location_path) == 1 or (
+                        len(file_location_path) == 2 and file_location_path[0] == file_project):
                     name = file_location_path[1] if len(file_location_path) == 2 else file_location_path[0]
                     folder = Folder.objects.create(name=name, parent=None)
                 else:
 
-
-
                     # def getFolderParent(folder_name):
 
                     folder = build(file_location_path)
-
 
                     # Folder.objects.create(name=???, parent=???)
             else:
@@ -290,14 +287,13 @@ def folderExists(name, path):
     return Folder.objects.filter(name=name, path=path).exists()
 
 
-
 def build(file_location_path):
     parent = file_location_path[:-1] if len(file_location_path) > 2 else file_location_path[:-1]
 
     # if len(parent) == 1:
     # aqui hemos llegado a la subcarpeta antes de raiz
     parent_name = parent[0] if len(parent) == 1 else parent[-2]
-    parent_path = parent_name#None
+    parent_path = parent_name  # None
 
     # else:
     if len(parent) > 1:
@@ -307,13 +303,13 @@ def build(file_location_path):
         parent_path = new_parent.path
         parent_name = new_parent.name
 
-
     if not folderExists(parent_name, parent_path):
         parent = create_folder(parent_name, parent_path)
     else:
         parent = Folder.objects.filter(name=parent_name, path=parent_path).first()
     folder = create_folder(file_location_path[-1], parent)
     return folder
+
 
 @login_required
 @require_http_methods(["GET"])
@@ -368,3 +364,136 @@ def delete_folder(request):
         return JsonResponse({'message': 'Folder not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+#################
+# File explorer #
+#################
+
+
+def get_user_project_files(user, project_name):
+    try:
+        locations = []
+        files = []
+
+        project_locations = Location.objects.filter(located_project__name=project_name)
+        for location in project_locations:
+            file = location.located_file
+            if file:
+                accessible = Access.objects.filter(accessed_file=file,
+                                                   accessing_team__membership__member=user.id)
+                if accessible or user_is_superadmin(user):
+                    locations.append(location)
+                    files.append({
+                        'path': location.located_folder.path if location.located_folder else '',
+                        'file': file.name
+                    })
+            # folders = Folder.objects.filter(project__name=project_name)
+
+        print(files)
+        return files
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+def get_file_structure(request):
+    test_structure = []
+    template_structure = {
+        "type": "",
+        "name": "",
+        "path": "",
+        "children": [
+            {
+                "type": "",
+                "name": "",
+                "path": ""
+            }
+        ]
+    }
+
+    current_user = request.user
+    user_projects = json.loads(get_user_projects(request).content.decode('utf-8'))['projects']
+    for project in user_projects:
+        # get_project_folders ya me retorna las ubicaciones accesibles por el usuario
+        # '' significa que usa el Project's root
+        # project_folders = get_project_folders(request, user_projects[2]['name']).content.decode('utf-8')
+        # project_folders_list = json.loads(project_folders)
+        # for location in project_folders_list:
+            # user_files = get_user_project_files(current_user, project.name)
+
+        user_files = get_user_project_files(current_user, project.name)
+        for user_file in user_files:
+            file_structure = template_structure.copy()
+            test_structure.append({
+                build_file_structure(file_structure, user_file)
+            })
+
+    structure = [
+        {
+            "type": "folder",
+            "name": "Project 1",
+            "path": "/project1",
+            "children": [
+                {
+                    "type": "file",
+                    "name": "data.txt",
+                    "path": "/project1/data.txt"
+                }
+            ]
+        },
+        {
+            "type": "folder",
+            "name": "Project 2",
+            "path": "/project2",
+            "children": [
+                {
+                    "type": "folder",
+                    "name": "input",
+                    "path": "/project2/input",
+                    "children": [
+                        {
+                            "type": "file",
+                            "name": "rawData",
+                            "path": "/project2/input/rawData.geojson"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+    return JsonResponse(structure, safe=False)
+
+
+def build_file_structure(file_structure, user_file):
+    pass
+
+# @require_http_methods(["POST"])
+# def get_file_content(request):
+#     data = json.loads(request.body)
+#     files = data.get('files', [])
+#
+#     # Example - replace with your actual database query
+#     content = ""
+#     for file_path in files:
+#         # Fetch content from your database
+#         content += f"Content of {file_path}\n"
+#
+#     return JsonResponse({"content": content})
+
+
+# @require_http_methods(["POST"])
+# def analyze_files(request):
+#     data = json.loads(request.body)
+#     files = data.get('files', [])
+#     analysis_type = data.get('analysisType')
+#
+#     # Example - replace with your actual analysis logic
+#     results = f"Analysis results for {len(files)} files"
+#     matching_files = files  # In this example, all files match
+#
+#     return JsonResponse({
+#         "results": results,
+#         "matchingFiles": matching_files
+#     })
