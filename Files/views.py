@@ -418,47 +418,19 @@ def get_file_structure(request):
     for project in user_projects:
         # get_project_folders ya me retorna las ubicaciones accesibles por el usuario
         # '' significa que usa el Project's root
-        # project_folders = get_project_folders(request, user_projects[2]['name']).content.decode('utf-8')
-        # project_folders_list = json.loads(project_folders)
-        # for location in project_folders_list:
-        # user_files = get_user_project_files(current_user, project.name)
-
         user_files = get_user_project_files(current_user, project['name'])
         # temp = user_files[:5]
         for user_file in user_files:
             file_structure = template_structure.copy()
-            if test_structure:
-                for project_structure in test_structure:
-                    if project['name'] == project_structure['name']:
-                        print('add file in this project # test_structure.update?')
-                        test_structure.append(
-                            {
-                                'type': 'folder',
-                                'name': project['name'],
-                                'path': f'/{project["name"]}/',
-                                'children': build_file_structure(test_structure, file_structure, user_file,
-                                                                 project['name'], project['name'])
-                            }
-                        )
-                    else:
-                        test_structure.append(
-                            {
-                                'type': 'folder',
-                                'name': project['name'],
-                                'path': f'/{project["name"]}/',
-                                'children': build_file_structure(test_structure, file_structure, user_file, project['name'], project['name'])
-                            }
-                        )
-            else:
-                test_structure.append(
-                    {
-                        'type': 'folder',
-                        'name': project['name'],
-                        'path': f'/{project["name"]}/',
-                        'children': build_file_structure(test_structure, file_structure, user_file, project['name'],
-                                                         project['name'])
-                    }
-                )
+            test_structure.append(
+                {
+                    'type': 'folder',
+                    'name': project['name'],
+                    'path': f'/{project["name"]}/',
+                    'children': build_file_structure(test_structure, file_structure, user_file, project['name'],
+                                                     project['name'])
+                }
+            )
 
 
     structure = [
@@ -497,60 +469,6 @@ def get_file_structure(request):
     return JsonResponse(test_structure, safe=False)
 
 
-def build_file_structureNO(file_structure, user_file, project_name):
-    file_name = user_file['file']
-    folder_path = user_file['path']
-
-    # Accedemos o creamos la raíz del proyecto
-    if not file_structure:
-        file_structure.update({
-            'type': 'folder',
-            'name': project_name,
-            'path': f'/{project_name}/',
-            'children': []
-        })
-
-    add_to_structureNO(file_structure, folder_path, file_name, project_name)
-
-    return file_structure
-
-
-def add_to_structureNO(current_folder, folder_path, file_name, acc_path):
-    file_path_parts = folder_path.split('/')
-
-    # Caso base: si no hay más subcarpetas, añadimos el archivo
-    if not folder_path:
-        # Si ya existe, evitamos duplicados
-        if not any(child['name'] == file_name for child in current_folder['children']):
-            current_folder['children'].append({
-                'type': 'file',
-                'name': file_name,
-                'path': f'{acc_path}/{file_name}'
-            })
-        return
-
-    folder_name = file_path_parts[0]
-    next_folder_path = '/'.join(file_path_parts[1:])
-    next_acc_path = f'{acc_path}/{folder_name}'
-
-    # Buscar si la carpeta ya existe
-    existing_folder = next(
-        (child for child in current_folder['children'] if child['name'] == folder_name and child['type'] == 'folder'),
-        None)
-
-    if not existing_folder:
-        # Si no existe, la creamos
-        existing_folder = {
-            'type': 'folder',
-            'name': folder_name,
-            'path': next_acc_path,
-            'children': []
-        }
-        current_folder['children'].append(existing_folder)
-
-    # Llamada recursiva con la siguiente parte de la ruta
-    add_to_structureNO(existing_folder, next_folder_path, file_name, next_acc_path)
-
 
 def build_file_structure(current_structure, file_structure, user_file, project_name, parent_name):
     file_name = user_file['file']
@@ -571,15 +489,6 @@ def build_recursive(current_structure, file_name, folder_path, acc_path):
         }]
     else:
         folder_name = file_path_parts[0]
-
-        for project in current_structure:
-            for folder in project['children']:
-                if folder['name'] == folder_name:
-                    print('path found!')
-                else:
-                    # TODO en lugar de retornarlo todo el rato: retornarlo la primera vez (en los ifs de antes). despues: update
-                    print('different folder. may continue?')
-
         next_folder_path = folder_path.removeprefix(folder_name)[1:]
         next_acc_path = f'{acc_path}/{folder_name}'
         return [{
