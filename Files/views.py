@@ -421,14 +421,20 @@ def get_file_structure(request):
         # project_folders = get_project_folders(request, user_projects[2]['name']).content.decode('utf-8')
         # project_folders_list = json.loads(project_folders)
         # for location in project_folders_list:
-            # user_files = get_user_project_files(current_user, project.name)
+        # user_files = get_user_project_files(current_user, project.name)
 
-        user_files = get_user_project_files(current_user, project.name)
+        user_files = get_user_project_files(current_user, project['name'])
+        # temp = user_files[:5]
         for user_file in user_files:
             file_structure = template_structure.copy()
-            test_structure.append({
-                build_file_structure(file_structure, user_file)
-            })
+            test_structure.append(
+                {
+                    'type': 'folder',
+                    'name': project['name'],
+                    'path': f'/{project["name"]}/',
+                    'children': build_file_structure(file_structure, user_file, project['name'], project['name'])
+                }
+            )
 
     structure = [
         {
@@ -463,11 +469,131 @@ def get_file_structure(request):
             ]
         }
     ]
-    return JsonResponse(structure, safe=False)
+    return JsonResponse(test_structure, safe=False)
 
 
-def build_file_structure(file_structure, user_file):
-    pass
+def build_file_structureXX(file_structure, user_file, project_name, parent_name):
+    print(user_file)
+    file_path = user_file['path']
+
+    if file_path == '':
+        # Caso base: Es un archivo
+        return {
+            "type": "file",
+            "name": user_file['file'],
+            "path": f"{parent_name}/{user_file['file']}".lstrip("/")
+        }
+
+    # Dividir la ruta y obtener el primer nivel
+    file_path_split = file_path.split('/')
+    parent = file_path_split[0]
+
+    # Obtener el path restante correctamente
+    next_user_file = user_file.copy()
+    next_user_file['path'] = "/".join(file_path_split[1:]) if len(file_path_split) > 1 else ''
+
+    # Buscar si el folder ya existe en la estructura actual
+    existing_folder = next((child for child in file_structure.get("children", []) if child["name"] == parent), None)
+
+    if existing_folder:
+        # Si el folder ya existe, agregar el nuevo archivo/carpeta a su lista de hijos
+        existing_folder["children"].append(
+            build_file_structure(existing_folder, next_user_file, project_name, f"{parent_name}/{parent}".lstrip("/")))
+    else:
+        # Si no existe, crearlo y añadirlo a la estructura
+        new_folder = {
+            "type": "folder",
+            "name": parent,
+            "path": f"{parent_name}/{parent}".lstrip("/"),
+            "children": [build_file_structure({}, next_user_file, project_name, f"{parent_name}/{parent}".lstrip("/"))]
+        }
+        file_structure.setdefault("children", []).append(new_folder)
+
+    # Asegurar que la estructura principal tiene la configuración correcta
+    file_structure.setdefault("type", "folder")
+    file_structure.setdefault("name", project_name)
+    file_structure.setdefault("path", f"/{project_name}")
+
+    return file_structure
+
+
+def build_file_structure(file_structure, user_file, project_name, parent_name):
+    file_name = user_file['file']
+    folder_path = user_file['path']
+    acc_path = f'{project_name}'
+
+    struct = build_recursive(file_name, folder_path, acc_path)
+    return struct
+
+
+def build_recursive(file_name, folder_path, acc_path):
+    file_path_parts = folder_path.split('/')
+    if len(file_path_parts[0]) == 0:
+        return [{
+            'type': 'file',
+            'name': file_name,
+            'path': f'{acc_path}/{file_name}'
+        }]
+    else:
+        folder_name = file_path_parts[0]
+        next_folder_path = folder_path.removeprefix(folder_name)[1:]
+        next_acc_path = f'{acc_path}/{folder_name}'
+        return [{
+            'type': 'folder',
+            'name': folder_name,
+            'path': f'{acc_path}/{folder_name}',
+            'children': build_recursive(file_name, next_folder_path, next_acc_path)
+        }]
+
+
+def build_file_structureX(file_structure, user_file, project_name, parent_name):
+    print(user_file)
+    file_path = user_file['path']
+
+    if file_path == '':
+        child_structure = {
+            "type": "file",
+            "name": user_file['file'],
+            "path": f'{parent_name}/{user_file["file"]}'
+        }
+        return child_structure
+    else:
+        # recursion
+        file_path_split = file_path.split('/')
+        parent = file_path_split[0]
+        next_user_file_path = user_file['path'].split('/')[:1]
+        next_user_file = user_file.copy()
+        next_user_file['path'] = file_path.removeprefix(file_path_split[0])[1:] if len(file_path_split) > 1 else ''
+
+        child_structure = {
+            "type": "folder",
+            "name": parent,
+            "path": f'{parent_name}/{parent}',
+            "children": [build_file_structure(file_structure, next_user_file, project_name, f'/{parent_name}/{parent}')]
+        }
+
+        file_structure['type'] = 'folder'
+        file_structure['name'] = f'{file_path}'
+        file_structure['path'] = f'/{parent_name}'
+        file_structure['children'] = [child_structure]
+
+        # if len(file_path_split) > 1:
+        #     # llamada recursiva
+        #     result_structure = build_file_structure(file_structure, user_file['path'].split('/')[1:], project_name)
+        #     pass
+        # else:
+        #     file_structure['type'] = 'folder'
+        #     file_structure['name'] = project_name
+        #     file_structure['path'] = project_name + '/' + file_path
+        #     file_structure['children'] = [
+        #         {
+        #             'type': 'file',
+        #             'name': user_file['file'],
+        #             'path': project_name + '/' + file_path + '/' + user_file['file']
+        #         }
+        #     ]
+
+    return file_structure
 
 # @require_http_methods(["POST"])
 # def get_file_content(request):
