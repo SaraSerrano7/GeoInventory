@@ -414,10 +414,11 @@ def get_file_structure(request):
         # get_project_folders ya me retorna las ubicaciones accesibles por el usuario
         # '' significa que usa el Project's root
         user_files = get_user_project_files(current_user, project['name'])
-        temp = user_files[:5]
-        temp = user_files[:10]
-        print(temp)
-        for user_file in temp:
+        # temp = user_files[:5]
+        # temp = user_files[:10]
+        # print(temp)
+        print(f'{len(user_files)} files')
+        for user_file in user_files:
             file_structure = template_structure.copy()
 
             find_equal = [project_struct['name'] == project['name'] for project_struct in test_structure]
