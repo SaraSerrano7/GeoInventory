@@ -25,7 +25,6 @@ def homepageView(request):
     Main view where the user interacts with the Files app
     """
     # available_files = File.count_all_existing_files()
-    # TODO: ficheros relacionados con proyectos no archivados que el usuario está asignado, no ficheros que haya creado el usuario
     user_files = File.count_user_files(request.user)
 
     # proyectos en los que está asignado el usuario
@@ -61,7 +60,6 @@ def uploadFilesView(request):
 
 
 def find_user_teams(user: User):
-    # TODO si eres superadmin debes poder elegir cualquier proyecto
 
     user_membership = Membership.objects.filter(member=user)
     user_teams = [membership.user_team for membership in user_membership]
@@ -79,7 +77,6 @@ def get_user_projects(request):
     try:
         # Get projects accessible to the current user
 
-        # TODO si eres super admin puedes ver todos los proyectos activos
         user_global_role = GlobalMembership.objects.get(related_user=request.user.id)
         if user_global_role.user_type.name == 'superadmin':
             projects = Project.objects.filter(active=True).values('pk', 'name')
@@ -113,8 +110,6 @@ def user_is_project_admin(user, project):
 def get_user_teams(request, project_name=None):
     try:
         # Get teams where current user is member
-        # TODO si eres superadmin deberias tener todos los teams del proyecto
-        # TODO si en el proyecto seleccionado eres admin, puedes seleccionar a cualquier equipo asignado al proyecto
 
         current_user = request.user
 
@@ -188,8 +183,6 @@ def upload_file(request):
                 located_file=geojson_file_instance
             )
         else:
-            # TODO folder nueva
-            # TODO subfolder de folder nueva
             folder = Folder.objects.filter(path=file_location)
             if not folder.exists():
                 # si estamos aqui, la folder no es Project root
@@ -245,7 +238,6 @@ def create_feature(geojson_file, geojson_data):
     geometry_type = geometry["type"]
     coordinates = geometry["coordinates"]
 
-    # TODO create GeoJSONFeature geojson_file - geometry_type - geometry
 
     feature = shape({
         "type": geometry_type,
@@ -262,13 +254,11 @@ def create_feature(geojson_file, geojson_data):
         attribute_name = key
         attribute_type = type(json.loads(f'"{value}"'))
         attribute_value = value
-        #       TODO create PropertyAttribute attribute_name - attribute_type
         propertyAttribute = PropertyAttribute.objects.create(
             attribute_name=attribute_name,
             attribute_type=attribute_type
         )
 
-        #       TODO create GeoJSONFeatureProperties GeoJSONFeature - PropertyAttribute - attribute_value
         geojsonFeatureProperty = GeoJSONFeatureProperties.objects.create(
             feature=geojsonfeature,
             attribute=propertyAttribute,
@@ -294,7 +284,6 @@ def build(file_location_path):
 
     # else:
     if len(parent) > 1:
-        # TODO TEST
         # parent_path = os.path.join(file_location_path[:-4], parent)
         new_parent = build(parent)
         parent_path = new_parent.path
@@ -328,7 +317,6 @@ def get_project_folders(request, project_name=None):
 
         else:
             # Get root folders
-            # TODO simplificacion: si no hay project name, son ficheros 'sin clasificar'
             locations = Folder.objects.filter(project__isnull=True)
 
         # Convert to list of dicts with path and empty status
@@ -552,7 +540,6 @@ def build_recursive(current_structure, file_name, folder_path, acc_path):
                     # }]
                 else:
                     continue
-                    # TODO solve this
             next_struct = [children for children in current_structure]
             next_struct.append({
                     'type': 'folder',
