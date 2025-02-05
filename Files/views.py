@@ -419,19 +419,39 @@ def get_file_structure(request):
         # get_project_folders ya me retorna las ubicaciones accesibles por el usuario
         # '' significa que usa el Project's root
         user_files = get_user_project_files(current_user, project['name'])
-        # temp = user_files[:5]
-        for user_file in user_files:
+        temp = user_files[:5]
+        temp = user_files[:10]
+        for user_file in temp:
             file_structure = template_structure.copy()
-            test_structure.append(
-                {
-                    'type': 'folder',
-                    'name': project['name'],
-                    'path': f'/{project["name"]}/',
-                    'children': build_file_structure(test_structure, file_structure, user_file, project['name'],
-                                                     project['name'])
-                }
-            )
 
+            find_equal = [project_struct['name'] == project['name'] for project_struct in test_structure]
+            exists_proj = find_equal.count(True)
+            if exists_proj:
+                proj_index = find_equal.index(True)
+                test_structure[proj_index].update(
+                    {
+                        'type': 'folder',
+                        'name': project['name'],
+                        'path': f'/{project["name"]}/',
+                        'children': build_file_structure(
+                            test_structure[proj_index]['children'],
+                            user_file,
+                            project['name'])
+                    }
+                )
+            else:
+
+                test_structure.append(
+                    {
+                        'type': 'folder',
+                        'name': project['name'],
+                        'path': f'/{project["name"]}/',
+                        'children': build_file_structure(
+                            [],
+                            user_file,
+                            project['name'])
+                    }
+                )
 
     structure = [
         {
@@ -469,11 +489,14 @@ def get_file_structure(request):
     return JsonResponse(test_structure, safe=False)
 
 
-
-def build_file_structure(current_structure, file_structure, user_file, project_name, parent_name):
+def build_file_structure(current_structure, user_file, project_name):
     file_name = user_file['file']
     folder_path = user_file['path']
     acc_path = f'{project_name}'
+
+    if folder_path == '':
+        current_structure.append(build_recursive(current_structure, file_name, folder_path, acc_path))
+        return current_structure
 
     struct = build_recursive(current_structure, file_name, folder_path, acc_path)
     return struct
@@ -491,14 +514,46 @@ def build_recursive(current_structure, file_name, folder_path, acc_path):
         folder_name = file_path_parts[0]
         next_folder_path = folder_path.removeprefix(folder_name)[1:]
         next_acc_path = f'{acc_path}/{folder_name}'
+
+        for children in current_structure:
+            if children['type'] == 'folder' and children['name'] == folder_name:
+                # find_struct = current_structure.count(children)
+                # if find_struct:
+                child_struct_index = current_structure.index(children)
+                child_struct = current_structure[child_struct_index]['children']
+
+                return [{
+                    'type': 'folder',
+                    'name': folder_name,
+                    'path': f'{acc_path}/{folder_name}',
+                    'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path)
+                }]
+            else:
+                # TODO solve this
+                # next_struct = [children for children in current_structure]
+                # next_struct.append({
+                #         'type': 'folder',
+                #         'name': folder_name,
+                #         'path': f'{acc_path}/{folder_name}',
+                #         'children': build_recursive([], file_name, next_folder_path, next_acc_path)
+                #     })
+                # return next_struct
+                return [
+                    children,
+                    {
+                        'type': 'folder',
+                        'name': folder_name,
+                        'path': f'{acc_path}/{folder_name}',
+                        'children': build_recursive([], file_name, next_folder_path, next_acc_path)
+                    }
+                ]
+
         return [{
             'type': 'folder',
             'name': folder_name,
             'path': f'{acc_path}/{folder_name}',
             'children': build_recursive(current_structure, file_name, next_folder_path, next_acc_path)
         }]
-
-
 
 # @require_http_methods(["POST"])
 # def get_file_content(request):

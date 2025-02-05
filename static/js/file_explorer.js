@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                 fileStructure = data;
+                console.log(fileStructure)
                 renderFileTree();
             })
             .catch(error => console.error('Error:', error));
@@ -38,6 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 `;
             } else {
+                if(Array.isArray(item)) {
+                    item = item[0]
+                }
+
                 html += `
                     <div class="file-item ${selectedFiles.has(item.path) ? 'highlighted' : ''}" data-path="${item.path}">
                         <input type="checkbox" class="file-checkbox"
