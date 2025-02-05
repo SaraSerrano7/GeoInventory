@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 html += `
-                    <div class="file-item ${selectedFiles.has(item.path) ? 'highlighted' : ''}" data-path="${item.path}">
+                    <div id="${item.id}" class="file-item ${selectedFiles.has(item.path) ? 'highlighted' : ''}" data-path="${item.path}">
                         <input type="checkbox" class="file-checkbox"
                             ${selectedFiles.has(item.path) ? 'checked' : ''}>
                         <i class="fas fa-file file-icon"></i>
@@ -77,11 +77,20 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.file-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', (e) => {
                 const filePath = e.target.closest('.file-item').dataset.path;
+                const fileId = e.target.closest('.file-item').id;
+
+                console.log(e.target.closest('.file-item').id);
 
                 if (e.target.checked) {
-                    selectedFiles.add(filePath);
+                    selectedFiles.add({
+                        'id':fileId,
+                        'path': filePath
+                    });
                 } else {
-                    selectedFiles.delete(filePath);
+                    selectedFiles.delete({
+                        'id':fileId,
+                        'path': filePath
+                    });
                 }
 
                 updateUI();
@@ -105,6 +114,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // View Data functionality
     document.getElementById('view-data-btn').addEventListener('click', () => {
+
+        console.log(selectedFiles)
         fetch('/api/files/content/', {
             method: 'POST',
             headers: {

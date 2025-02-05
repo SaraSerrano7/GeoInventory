@@ -4,7 +4,7 @@ URLs-VIEWS mapping file
 from django.urls import path
 
 from .views import homepageView, uploadFilesView, upload_file, get_user_projects, get_project_folders, delete_folder, \
-    get_user_teams, get_categories, get_file_structure
+    get_user_teams, get_categories, get_file_structure, get_file_content
 
 urlpatterns = [
     path('', homepageView, name='home'),
@@ -18,7 +18,7 @@ urlpatterns = [
     path('api/delete-folder/', delete_folder, name='delete-folder'),
 
     path('api/files/structure/', get_file_structure, name='file_structure'),
-    # path('api/files/content/', get_file_content, name='file_content'),
+    path('api/files/content/', get_file_content, name='file_content'),
     # path('api/files/analyze/', analyze_files, name='analyze_files'),
 
 ]
