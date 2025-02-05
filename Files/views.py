@@ -33,7 +33,6 @@ def homepageView(request):
     user_teams = [membership.user_team for membership in user_memberships]
 
     user_projects = Assignations.objects.filter(assignated_team__in=user_teams, assignated_project__active=True)
-    print(user_projects)
 
     context = {
         'available_files': user_files,
@@ -113,13 +112,11 @@ def user_is_project_admin(user, project):
 @require_http_methods(["GET"])
 def get_user_teams(request, project_name=None):
     try:
-        print('wtf bro')
         # Get teams where current user is member
         # TODO si eres superadmin deberias tener todos los teams del proyecto
         # TODO si en el proyecto seleccionado eres admin, puedes seleccionar a cualquier equipo asignado al proyecto
 
         current_user = request.user
-        print(current_user)
 
         if user_is_superadmin(current_user) or user_is_project_admin(current_user, project_name):
             user_teams = Team.objects.filter(assignations__assignated_project__name=project_name).values('name')
@@ -340,7 +337,6 @@ def get_project_folders(request, project_name=None):
             'is_empty': location.located_file is None  # Assuming you have a related_name='files' on your File model
         } for location in locations]
 
-        print(folder_list)
         return JsonResponse(folder_list, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -390,7 +386,6 @@ def get_user_project_files(user, project_name):
                     })
             # folders = Folder.objects.filter(project__name=project_name)
 
-        print(files)
         return files
 
     except Exception as e:
@@ -421,6 +416,7 @@ def get_file_structure(request):
         user_files = get_user_project_files(current_user, project['name'])
         temp = user_files[:5]
         temp = user_files[:10]
+        print(temp)
         for user_file in temp:
             file_structure = template_structure.copy()
 
@@ -495,7 +491,7 @@ def build_file_structure(current_structure, user_file, project_name):
     acc_path = f'{project_name}'
 
     if folder_path == '':
-        current_structure.append(build_recursive(current_structure, file_name, folder_path, acc_path))
+        current_structure.append(build_recursive(current_structure, file_name, folder_path, acc_path)[0])
         return current_structure
 
     struct = build_recursive(current_structure, file_name, folder_path, acc_path)
@@ -515,45 +511,72 @@ def build_recursive(current_structure, file_name, folder_path, acc_path):
         next_folder_path = folder_path.removeprefix(folder_name)[1:]
         next_acc_path = f'{acc_path}/{folder_name}'
 
-        for children in current_structure:
-            if children['type'] == 'folder' and children['name'] == folder_name:
-                # find_struct = current_structure.count(children)
-                # if find_struct:
-                child_struct_index = current_structure.index(children)
-                child_struct = current_structure[child_struct_index]['children']
+        if current_structure:
+            for children in current_structure:
+                if children['type'] == 'folder' and children['name'] == folder_name:
+                    # find_struct = current_structure.count(children)
+                    # if find_struct:
+                    child_struct_index = current_structure.index(children)
+                    child_struct = current_structure[child_struct_index]['children']
 
-                return [{
+                    if next_folder_path == '':
+                        child_struct.append(
+                            build_recursive(child_struct, file_name, next_folder_path, next_acc_path)
+                            # {
+                            #     'type': 'folder',
+                            #     'name': folder_name,
+                            #     'path': f'{acc_path}/{folder_name}',
+                            #     'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path)
+                            # }
+                        )
+                        return current_structure
+                    else:
+
+
+                        current_structure[child_struct_index].update(
+                            {
+                                'type': 'folder',
+                                'name': folder_name,
+                                'path': f'{acc_path}/{folder_name}',
+                                'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path)
+                            }
+                        )
+                        return current_structure
+
+                    # return [{
+                    #     'type': 'folder',
+                    #     'name': folder_name,
+                    #     'path': f'{acc_path}/{folder_name}',
+                    #     'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path)
+                    # }]
+                else:
+                    continue
+                    # TODO solve this
+            next_struct = [children for children in current_structure]
+            next_struct.append({
                     'type': 'folder',
                     'name': folder_name,
                     'path': f'{acc_path}/{folder_name}',
-                    'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path)
-                }]
-            else:
-                # TODO solve this
-                # next_struct = [children for children in current_structure]
-                # next_struct.append({
-                #         'type': 'folder',
-                #         'name': folder_name,
-                #         'path': f'{acc_path}/{folder_name}',
-                #         'children': build_recursive([], file_name, next_folder_path, next_acc_path)
-                #     })
-                # return next_struct
-                return [
-                    children,
-                    {
-                        'type': 'folder',
-                        'name': folder_name,
-                        'path': f'{acc_path}/{folder_name}',
-                        'children': build_recursive([], file_name, next_folder_path, next_acc_path)
-                    }
-                ]
+                    'children': build_recursive([], file_name, next_folder_path, next_acc_path)
+                })
+            return next_struct
+                    # return [
+                    #     children,
+                    #     {
+                    #         'type': 'folder',
+                    #         'name': folder_name,
+                    #         'path': f'{acc_path}/{folder_name}',
+                    #         'children': build_recursive([], file_name, next_folder_path, next_acc_path)
+                    #     }
+                    # ]
+        else:
 
-        return [{
-            'type': 'folder',
-            'name': folder_name,
-            'path': f'{acc_path}/{folder_name}',
-            'children': build_recursive(current_structure, file_name, next_folder_path, next_acc_path)
-        }]
+            return [{
+                'type': 'folder',
+                'name': folder_name,
+                'path': f'{acc_path}/{folder_name}',
+                'children': build_recursive(current_structure, file_name, next_folder_path, next_acc_path)
+            }]
 
 # @require_http_methods(["POST"])
 # def get_file_content(request):
