@@ -267,11 +267,11 @@ class Classification(DigitalResource):
 
 
 GEOJSON_GEOMETRY_TYPE_CHOICES = [
-    ('point', 'point'),
-    ('multipoint', 'multipoint'),
-    ('line', 'line'),
-    ('polygon', 'polygon'),
-    ('multipolygon', 'multipolygon'),
+    ('Point', 'Point'),
+    ('MultiPoint', 'MultiPoint'),
+    ('Line', 'Line'),
+    ('Polygon', 'Polygon'),
+    ('MultiPolygon', 'MultiPolygon'),
 ]
 
 GEOJSON_TYPE_CHOICES = [
@@ -283,7 +283,7 @@ GEOJSON_ATTR_TYPE_CHOICES = [
     ('int', 'int'),
     ('float', 'float'),
     ('str', 'str'),
-
+    ('bool', 'bool')
 ]
 
 

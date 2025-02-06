@@ -60,7 +60,6 @@ def uploadFilesView(request):
 
 
 def find_user_teams(user: User):
-
     user_membership = Membership.objects.filter(member=user)
     user_teams = [membership.user_team for membership in user_membership]
     return user_teams
@@ -238,7 +237,6 @@ def create_feature(geojson_file, geojson_data):
     geometry_type = geometry["type"]
     coordinates = geometry["coordinates"]
 
-
     feature = shape({
         "type": geometry_type,
         "coordinates": coordinates
@@ -373,7 +371,6 @@ def get_user_project_files(user, project_name):
                         'file': file.name,
                         'id': file.id
                     })
-            # folders = Folder.objects.filter(project__name=project_name)
 
         return files
 
@@ -384,18 +381,6 @@ def get_user_project_files(user, project_name):
 @require_http_methods(["GET"])
 def get_file_structure(request):
     test_structure = []
-    template_structure = {
-        "type": "",
-        "name": "",
-        "path": "",
-        "children": [
-            {
-                "type": "",
-                "name": "",
-                "path": ""
-            }
-        ]
-    }
 
     current_user = request.user
     user_projects = json.loads(get_user_projects(request).content.decode('utf-8'))['projects']
@@ -461,7 +446,7 @@ def get_file_structure(request):
                     "children": [
                         {
                             "type": "file",
-                            "id" : "2",
+                            "id": "2",
                             "name": "rawData",
                             "path": "/project2/input/rawData.geojson"
                         }
@@ -490,7 +475,6 @@ def build_file_structure(current_structure, user_file, project_name):
 def build_recursive(current_structure, file_name, folder_path, acc_path, file_id):
     file_path_parts = folder_path.split('/')
     if len(file_path_parts[0]) == 0:
-        # TODO add file object file
         return [{
             'type': 'file',
             'name': file_name,
@@ -505,60 +489,39 @@ def build_recursive(current_structure, file_name, folder_path, acc_path, file_id
         if current_structure:
             for children in current_structure:
                 if children['type'] == 'folder' and children['name'] == folder_name:
-                    # find_struct = current_structure.count(children)
-                    # if find_struct:
                     child_struct_index = current_structure.index(children)
                     child_struct = current_structure[child_struct_index]['children']
 
                     if next_folder_path == '':
                         child_struct.append(
                             build_recursive(child_struct, file_name, next_folder_path, next_acc_path, file_id)
-                            # {
-                            #     'type': 'folder',
-                            #     'name': folder_name,
-                            #     'path': f'{acc_path}/{folder_name}',
-                            #     'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path)
-                            # }
+
                         )
                         return current_structure
                     else:
-
 
                         current_structure[child_struct_index].update(
                             {
                                 'type': 'folder',
                                 'name': folder_name,
                                 'path': f'{acc_path}/{folder_name}',
-                                'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path, file_id)
+                                'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path,
+                                                            file_id)
                             }
                         )
                         return current_structure
 
-                    # return [{
-                    #     'type': 'folder',
-                    #     'name': folder_name,
-                    #     'path': f'{acc_path}/{folder_name}',
-                    #     'children': build_recursive(child_struct, file_name, next_folder_path, next_acc_path)
-                    # }]
                 else:
                     continue
             next_struct = [children for children in current_structure]
             next_struct.append({
-                    'type': 'folder',
-                    'name': folder_name,
-                    'path': f'{acc_path}/{folder_name}',
-                    'children': build_recursive([], file_name, next_folder_path, next_acc_path, file_id)
-                })
+                'type': 'folder',
+                'name': folder_name,
+                'path': f'{acc_path}/{folder_name}',
+                'children': build_recursive([], file_name, next_folder_path, next_acc_path, file_id)
+            })
             return next_struct
-                    # return [
-                    #     children,
-                    #     {
-                    #         'type': 'folder',
-                    #         'name': folder_name,
-                    #         'path': f'{acc_path}/{folder_name}',
-                    #         'children': build_recursive([], file_name, next_folder_path, next_acc_path)
-                    #     }
-                    # ]
+
         else:
 
             return [{
@@ -568,19 +531,66 @@ def build_recursive(current_structure, file_name, folder_path, acc_path, file_id
                 'children': build_recursive(current_structure, file_name, next_folder_path, next_acc_path, file_id)
             }]
 
+
 @require_http_methods(["POST"])
 def get_file_content(request):
- data = json.loads(request.body)
- files = data.get('files', [])
+    data = json.loads(request.body)
+    files = data.get('files', [])
+    files_id_list = [file['id'] for file in files]
+    files_list = GeoJSON.objects.filter(pk__in=files_id_list)
+    _content = {}
+    for file in files_list:
+        _content = {
+            'file_id': file.pk,
+            'file_content': build_geojson(file)
+        }
 
- # Example - replace with your actual database query
- content = ""
- for file_path in files:
-     # Fetch content from your database
-     content += f"Content of {file_path}\n"
+    content = ""
+    for file_path in files:
+        content += f"Content of {file_path}\n"
 
- return JsonResponse({"content": content})
+    return JsonResponse({"content": _content})
 
+
+def build_geojson(geojson_file):
+    geojson = {}
+
+    geojson_type = geojson_file.content_type
+    if geojson_type.isdigit():
+        geojson_type = GEOJSON_TYPE_CHOICES[int(geojson_type)][0]
+
+    geojson['type'] = geojson_type
+    if geojson_type == 'Feature':
+        geojson_feature = GeoJSONFeature.objects.get(file=geojson_file)
+        geojson = add_geojson_feature(geojson, geojson_feature)
+
+    else:
+        # TODO
+        features = []
+        geojson_features = GeoJSONFeature.objects.filter(file=geojson_file)
+        for feature in geojson_features:
+            geojson = add_geojson_feature(geojson, feature)
+            features.append(geojson)
+
+        geojson['features'] = features
+
+    return geojson
+
+
+def add_geojson_feature(geojson, geojson_feature):
+
+    geojson['geometry'] = geojson_feature.geometry.geojson
+    properties = {}
+
+    feature_properties_list = GeoJSONFeatureProperties.objects.filter(feature=geojson_feature)
+    for feature_property in feature_properties_list:
+        property_name = feature_property.attribute.attribute_name
+        # Para este caso de uso realmente no me hace falta el tipo, estoy mandando un geojson, acabara en str....
+        property_value = feature_property.attribute_value
+        properties[property_name] = property_value
+
+    geojson['properties'] = properties
+    return geojson
 
 # @require_http_methods(["POST"])
 # def analyze_files(request):

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-    let selectedFiles = new Set();
+    let selectedFiles = new Map();
     let fileStructure = [];
 
     // Fetch file structure from Django backend
@@ -82,17 +82,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log(e.target.closest('.file-item').id);
 
                 if (e.target.checked) {
-                    selectedFiles.add({
-                        'id':fileId,
-                        'path': filePath
-                    });
+                    // selectedFiles.add({
+                    //     'id':fileId,
+                    //     'path': filePath
+                    // });
+                    selectedFiles.set(fileId, filePath);
                 } else {
-                    selectedFiles.delete({
-                        'id':fileId,
-                        'path': filePath
-                    });
+                    console.log('deleting')
+                    // selectedFiles.delete({
+                    //     'id':fileId,
+                    //     'path': filePath
+                    // });
+                    selectedFiles.delete(fileId);
                 }
-
+                console.log(selectedFiles)
                 updateUI();
             });
         });
@@ -123,11 +126,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
-                files: Array.from(selectedFiles)
+                files: Array.from(selectedFiles, ([id, path]) => ({ id, path }))
             })
         })
             .then(response => response.json())
             .then(data => {
+                console.log('data', data)
+                console.log('data.content', data.content)
+                console.log('data.json()', data.json())
                 document.getElementById('no-data-message').style.display = 'none';
                 const contentDisplay = document.getElementById('content-display');
                 contentDisplay.style.display = 'block';
