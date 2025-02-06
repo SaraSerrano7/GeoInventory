@@ -538,12 +538,12 @@ def get_file_content(request):
     files = data.get('files', [])
     files_id_list = [file['id'] for file in files]
     files_list = GeoJSON.objects.filter(pk__in=files_id_list)
-    _content = {}
+    _content = []
     for file in files_list:
-        _content = {
+        _content.append({
             'file_id': file.pk,
             'file_content': build_geojson(file)
-        }
+        })
 
     content = ""
     for file_path in files:
@@ -569,8 +569,8 @@ def build_geojson(geojson_file):
         features = []
         geojson_features = GeoJSONFeature.objects.filter(file=geojson_file)
         for feature in geojson_features:
-            geojson = add_geojson_feature(geojson, feature)
-            features.append(geojson)
+            prepared_feautre = add_geojson_feature({}, feature)
+            features.append(prepared_feautre)
 
         geojson['features'] = features
 
@@ -579,7 +579,7 @@ def build_geojson(geojson_file):
 
 def add_geojson_feature(geojson, geojson_feature):
 
-    geojson['geometry'] = geojson_feature.geometry.geojson
+    geojson['geometry'] = json.loads(geojson_feature.geometry.geojson)
     properties = {}
 
     feature_properties_list = GeoJSONFeatureProperties.objects.filter(feature=geojson_feature)

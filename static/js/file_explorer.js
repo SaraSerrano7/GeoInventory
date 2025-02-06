@@ -112,6 +112,9 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             actionButtons.style.display = 'none';
             selectedCount.style.display = 'none';
+            const contentDisplay = document.getElementById('content-display');
+            contentDisplay.style.display = 'none';
+            contentDisplay.innerHTML = '';
         }
     }
 
@@ -131,13 +134,18 @@ document.addEventListener('DOMContentLoaded', function () {
         })
             .then(response => response.json())
             .then(data => {
-                console.log('data', data)
-                console.log('data.content', data.content)
-                console.log('data.json()', data.json())
                 document.getElementById('no-data-message').style.display = 'none';
                 const contentDisplay = document.getElementById('content-display');
                 contentDisplay.style.display = 'block';
-                contentDisplay.innerHTML = `<pre>${data.content}</pre>`;
+
+                var files_data = data.content
+                files_data.forEach(file => {
+                    console.log(file)
+                    contentDisplay.innerHTML += `<pre>${data.content}</pre>`;
+                })
+
+
+
             })
             .catch(error => console.error('Error:', error));
     });
