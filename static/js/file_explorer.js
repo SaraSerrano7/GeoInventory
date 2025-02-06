@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
     let selectedFiles = new Map();
     let fileStructure = [];
+    let map = null;
+    let geojsonLayers = new Map();
 
     // Fetch file structure from Django backend
     function fetchFileStructure() {
@@ -39,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 `;
             } else {
-                if(Array.isArray(item)) {
+                if (Array.isArray(item)) {
                     item = item[0]
                 }
 
@@ -76,26 +78,23 @@ document.addEventListener('DOMContentLoaded', function () {
         // File selection
         document.querySelectorAll('.file-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', (e) => {
+                let fileId = e.target.closest('.file-item').id;
                 const filePath = e.target.closest('.file-item').dataset.path;
-                const fileId = e.target.closest('.file-item').id;
-
-                console.log(e.target.closest('.file-item').id);
 
                 if (e.target.checked) {
-                    // selectedFiles.add({
-                    //     'id':fileId,
-                    //     'path': filePath
-                    // });
                     selectedFiles.set(fileId, filePath);
                 } else {
-                    console.log('deleting')
-                    // selectedFiles.delete({
-                    //     'id':fileId,
-                    //     'path': filePath
-                    // });
                     selectedFiles.delete(fileId);
+                    // Remove layer from map if it exists
+                    fileId = parseInt(fileId);
+                    console.log('deleting', fileId, geojsonLayers)
+                    console.log(geojsonLayers.has(fileId))
+                    if (map && geojsonLayers.has(fileId)) {
+                        console.log('removing', geojsonLayers.get(fileId))
+                        map.removeLayer(geojsonLayers.get(fileId));
+                        geojsonLayers.delete(fileId);
+                    }
                 }
-                console.log(selectedFiles)
                 updateUI();
             });
         });
@@ -112,16 +111,49 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             actionButtons.style.display = 'none';
             selectedCount.style.display = 'none';
-            const contentDisplay = document.getElementById('content-display');
-            contentDisplay.style.display = 'none';
-            contentDisplay.innerHTML = '';
+            // const contentDisplay = document.getElementById('content-display');
+            // contentDisplay.style.display = 'block';
+            const map = document.getElementById('map-container');
+            map.style.display = 'none';
+            const noDataMessage = document.getElementById('no-data-message');
+            noDataMessage.style.display = 'block';
         }
     }
 
     // View Data functionality
     document.getElementById('view-data-btn').addEventListener('click', () => {
 
-        console.log(selectedFiles)
+        const contentDisplay = document.getElementById('content-display');
+        const mapContainer = document.getElementById('map-container');
+        const noDataMessage = document.getElementById('no-data-message');
+
+        if (selectedFiles.size === 0) {
+            mapContainer.style.display = 'none';
+            contentDisplay.style.display = 'none';
+            noDataMessage.style.display = 'block';
+            return;
+        }
+
+        // Initialize map if not already done
+        mapContainer.style.display = 'block';
+        noDataMessage.style.display = 'none';
+        contentDisplay.style.display = 'none';
+        initializeMap();
+
+        // Get the currently selected file IDs
+        const currentSelectedIds = Array.from(selectedFiles.keys());
+
+        // Remove layers for unselected files
+        console.log(geojsonLayers);
+        console.log(currentSelectedIds);
+        geojsonLayers.forEach((layer, fileId) => {
+            if (!currentSelectedIds.includes(fileId)) {
+                map.removeLayer(layer);
+                geojsonLayers.delete(fileId);
+            }
+        });
+
+
         fetch('/api/files/content/', {
             method: 'POST',
             headers: {
@@ -129,26 +161,101 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
-                files: Array.from(selectedFiles, ([id, path]) => ({ id, path }))
+                files: Array.from(selectedFiles, ([id, path]) => ({id, path}))
             })
         })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('no-data-message').style.display = 'none';
-                const contentDisplay = document.getElementById('content-display');
-                contentDisplay.style.display = 'block';
+
+                let isFirstFeature = true;
+
+                // document.getElementById('no-data-message').style.display = 'none';
+                // const contentDisplay = document.getElementById('content-display');
+                // contentDisplay.style.display = 'block';
 
                 var files_data = data.content
                 files_data.forEach(file => {
-                    console.log(file)
-                    contentDisplay.innerHTML += `<pre>${data.content}</pre>`;
+                    console.log('received', file)
+                    // contentDisplay.innerHTML += `<pre>${data.content}</pre>`;
                 })
 
+                Object.entries(data.content).forEach(([fileId, content]) => {
+                    // Skip if layer already exists
+                    if (geojsonLayers.has(fileId)) return;
+
+                    try {
+                        console.log(content['file_content'])
+                        const geojsonData = content['file_content']
+
+                        const layer = L.geoJSON(geojsonData, {
+                            style: {
+                                color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+                                weight: 2,
+                                opacity: 0.7
+                            },
+                            onEachFeature: (feature, layer) => {
+                                if (feature.properties) {
+                                    layer.bindPopup(
+                                        `<pre>${JSON.stringify(feature.properties, null, 2)}</pre>`
+                                    );
+                                }
+                            }
+                        }).addTo(map);
+
+                        console.log('before add', geojsonLayers);
+                        geojsonLayers.set(content['file_id'], layer);
+                        console.log('after add', geojsonLayers);
+
+
+                        if (isFirstFeature) {
+                            centerMapOnFirstFeature(geojsonData);
+                            isFirstFeature = false;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing GeoJSON:', e);
+                    }
+                });
 
 
             })
             .catch(error => console.error('Error:', error));
     });
+
+
+    function initializeMap() {
+        if (!map) {
+            map = L.map('map-container').setView([0, 0], 2);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+    }
+
+    function centerMapOnFirstFeature(geojson) {
+        if (geojson.features && geojson.features.length > 0) {
+            const feature = geojson.features[0];
+            if (feature.geometry) {
+                if (feature.geometry.type === 'Point') {
+                    const coords = feature.geometry.coordinates;
+                    map.setView([coords[1], coords[0]], 10);
+                } else {
+                    const layer = L.geoJSON(feature);
+                    map.fitBounds(layer.getBounds());
+                }
+            }
+        } else {
+            if (geojson['geometry']) {
+                if (geojson['geometry'].type === 'Point') {
+                    const coords = geojson['geometry'].coordinates;
+                    map.setView([coords[1], coords[0]], 10);
+                } else {
+                    const layer = L.geoJSON(geojson);
+                    map.fitBounds(layer.getBounds());
+                }
+            }
+        }
+    }
+
 
     // // Analysis functionality
     // const analysisModal = document.getElementById('analysis-modal');

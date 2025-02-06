@@ -534,22 +534,27 @@ def build_recursive(current_structure, file_name, folder_path, acc_path, file_id
 
 @require_http_methods(["POST"])
 def get_file_content(request):
-    data = json.loads(request.body)
-    files = data.get('files', [])
-    files_id_list = [file['id'] for file in files]
-    files_list = GeoJSON.objects.filter(pk__in=files_id_list)
-    _content = []
-    for file in files_list:
-        _content.append({
-            'file_id': file.pk,
-            'file_content': build_geojson(file)
-        })
+    try:
+        data = json.loads(request.body)
+        files = data.get('files', [])
+        files_id_list = [file['id'] for file in files]
+        files_list = GeoJSON.objects.filter(pk__in=files_id_list)
+        _content = []
+        for file in files_list:
+            _content.append({
+                'file_id': file.pk,
+                'file_content': build_geojson(file)
+            })
 
-    content = ""
-    for file_path in files:
-        content += f"Content of {file_path}\n"
+        content = ""
+        for file_path in files:
+            content += f"Content of {file_path}\n"
 
-    return JsonResponse({"content": _content})
+        return JsonResponse({"content": _content})
+    except Exception as e:
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
 
 
 def build_geojson(geojson_file):
@@ -570,6 +575,7 @@ def build_geojson(geojson_file):
         geojson_features = GeoJSONFeature.objects.filter(file=geojson_file)
         for feature in geojson_features:
             prepared_feautre = add_geojson_feature({}, feature)
+            prepared_feautre['type'] = 'Feature'
             features.append(prepared_feautre)
 
         geojson['features'] = features
@@ -578,7 +584,6 @@ def build_geojson(geojson_file):
 
 
 def add_geojson_feature(geojson, geojson_feature):
-
     geojson['geometry'] = json.loads(geojson_feature.geometry.geojson)
     properties = {}
 

@@ -629,3 +629,16 @@
     background-color: #f8f9fa;
     border-radius: 4px;
 }
+
+/* Data Viewer */
+#map-container {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+.leaflet-popup-content {
+    max-height: 300px;
+    overflow-y: auto;
+}

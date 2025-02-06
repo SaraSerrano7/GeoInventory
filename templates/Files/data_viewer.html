@@ -4,11 +4,15 @@
 {#    </div>#}
 {#</div>#}
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 
 <div class="data-viewer" id="data-viewer">
     <div class="no-data-message" id="no-data-message">
         No data selected to display
     </div>
+    <div id="map-container" style="display: none; height: 600px;"></div>
     <div id="content-display" style="display: none;"></div>
     <div id="analysis-results" class="analysis-results" style="display: none;"></div>
 </div>
