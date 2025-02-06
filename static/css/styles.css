@@ -642,3 +642,56 @@
     max-height: 300px;
     overflow-y: auto;
 }
+
+/*.data-viewer {*/
+/*    position: relative;*/
+/*    height: 100%;*/
+/*}*/
+
+.geojson-properties {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    max-width: 300px;
+}
+
+.geojson-properties h3 {
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.geojson-properties .property-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.geojson-properties .property-name {
+    font-weight: 600;
+    color: #666;
+}
+
+.geojson-properties .property-value {
+    color: #333;
+    text-align: right;
+}
+
+.leaflet-control-layers {
+    background-color: white;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.leaflet-control-layers-list label {
+    display: block;
+    margin: 5px 0;
+}
+
+.leaflet-control-layers-selector {
+    margin-right: 5px;
+}

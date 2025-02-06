@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let fileStructure = [];
     let map = null;
     let geojsonLayers = new Map();
+    let fileColors = new Map();
 
     // Fetch file structure from Django backend
     function fetchFileStructure() {
@@ -93,6 +94,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.log('removing', geojsonLayers.get(fileId))
                         map.removeLayer(geojsonLayers.get(fileId));
                         geojsonLayers.delete(fileId);
+                        const fileItem = document.getElementById(fileId);
+                        fileItem.style.backgroundColor = ""
                     }
                 }
                 updateUI();
@@ -150,6 +153,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!currentSelectedIds.includes(fileId)) {
                 map.removeLayer(layer);
                 geojsonLayers.delete(fileId);
+                const fileItem = document.getElementById(parseInt(content['file_id']));
+                if (fileItem) {
+                    fileItem.style.backgroundColor = '';
+                }
             }
         });
 
@@ -187,25 +194,51 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.log(content['file_content'])
                         const geojsonData = content['file_content']
 
+                        const fileColor = generateRandomColor();
+                        fileColors.set(fileId, fileColor);
+
                         const layer = L.geoJSON(geojsonData, {
                             style: {
-                                color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+                                color: fileColor,
                                 weight: 2,
-                                opacity: 0.7
+                                opacity: 0.7,
+                                fillColor: fileColor,
+                                fillOpacity: 0.3
+                            },
+                            pointToLayer: (feature, latlng) => {
+                                return L.circleMarker(latlng, {
+                                    radius: 8,
+                                    fillColor: fileColor,
+                                    color: "#000",
+                                    weight: 1,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                });
                             },
                             onEachFeature: (feature, layer) => {
                                 if (feature.properties) {
                                     layer.bindPopup(
-                                        `<pre>${JSON.stringify(feature.properties, null, 2)}</pre>`
+                                        createPropertiesPopup(feature.properties)
                                     );
                                 }
                             }
                         }).addTo(map);
 
+
                         console.log('before add', geojsonLayers);
                         geojsonLayers.set(content['file_id'], layer);
                         console.log('after add', geojsonLayers);
 
+                        console.log(parseInt(content['file_id']))
+                        const fileItem = document.getElementById(parseInt(content['file_id']));
+                        console.log('showing file:', fileItem);
+                        if (fileItem) {
+                            console.log('changing color', fileColor + '20')
+                            console.log('current color', fileItem.style.backgroundColor)
+                            fileItem.style.backgroundColor = fileColor.replace('hsl', 'hsla').replace(')', ', 0.125)');
+
+                            console.log('current color', fileItem.style.backgroundColor)
+                        }
 
                         if (isFirstFeature) {
                             centerMapOnFirstFeature(geojsonData);
@@ -224,10 +257,40 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initializeMap() {
         if (!map) {
+
             map = L.map('map-container').setView([0, 0], 2);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+
+
+            const tileLayers = {
+                'OpenStreetMap': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }),
+                'Orthophoto': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles © Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                })
+            };
+
+            // Add the default OpenStreetMap layer
+            tileLayers['OpenStreetMap'].addTo(map);
+
+            // Add layer control
+            L.control.layers(tileLayers).addTo(map);
+
+            const customIcon = L.divIcon({
+                className: 'custom-marker',
+                html: `
+                    <div style="
+                        width: 30px;
+                        height: 30px;
+                        background-color: #007bff;
+                        border-radius: 50%;
+                        border: 3px solid white;
+                        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+                    "></div>
+                `,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
         }
     }
 
@@ -254,6 +317,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         }
+    }
+
+    function generateRandomColor() {
+        const hue = Math.floor(Math.random() * 360);
+        return `hsl(${hue}, 70%, 50%)`;
+    }
+
+    function createPropertiesPopup(properties) {
+        if (!properties || Object.keys(properties).length === 0) {
+            return '<div class="geojson-properties"><p>No properties available</p></div>';
+        }
+
+        let popupContent = '<div class="geojson-properties">';
+        popupContent += '<h3>Feature Properties</h3>';
+
+        Object.entries(properties).forEach(([key, value]) => {
+            popupContent += `
+                <div class="property-item">
+                    <span class="property-name">${key}</span>
+                    <span class="property-value">${
+                value === null ? 'null' :
+                    value === undefined ? 'undefined' :
+                        value.toString()
+            }</span>
+                </div>
+            `;
+        });
+
+        popupContent += '</div>';
+        return popupContent;
     }
 
 
@@ -325,6 +418,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         return cookieValue;
     }
+
 
     // Initialize
     fetchFileStructure();
