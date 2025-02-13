@@ -555,8 +555,6 @@ def get_file_content(request):
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-
-
 def build_geojson(geojson_file):
     geojson = {}
 
@@ -597,17 +595,17 @@ def add_geojson_feature(geojson, geojson_feature):
     geojson['properties'] = properties
     return geojson
 
-# @require_http_methods(["POST"])
-# def analyze_files(request):
-#     data = json.loads(request.body)
-#     files = data.get('files', [])
-#     analysis_type = data.get('analysisType')
-#
-#     # Example - replace with your actual analysis logic
-#     results = f"Analysis results for {len(files)} files"
-#     matching_files = files  # In this example, all files match
-#
-#     return JsonResponse({
-#         "results": results,
-#         "matchingFiles": matching_files
-#     })
+
+@require_http_methods(["POST"])
+def analyze_files(request):
+    data = json.loads(request.body)
+    files = data.get('files', [])
+    analysis_type = data.get('analysisType')
+
+    results = f"Analysis results for {len(files)} files"
+    matching_files = files  # In this example, all files match
+
+    return JsonResponse({
+        "results": results,
+        "matchingFiles": matching_files
+    })
