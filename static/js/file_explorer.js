@@ -426,11 +426,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //-----------------------------------------------------
 
-    const fileTree = document.getElementById('file-tree');
+    const fileExplorerHeader = document.querySelector('.file-explorer-header');
+    const headerText = fileExplorerHeader.textContent;
+    fileExplorerHeader.innerHTML = ''; // Clear existing content
+
+    // Create left section with text
+    const headerTextSpan = document.createElement('span');
+    headerTextSpan.textContent = 'File Explorer';
+    fileExplorerHeader.appendChild(headerTextSpan);
+
+    // Create right section with actions
+    const headerActions = document.createElement('div');
+    headerActions.className = 'header-actions';
+
     const selectAllBtn = document.createElement('button');
     selectAllBtn.className = 'select-all-btn';
     selectAllBtn.textContent = 'Select All';
-    fileTree.parentNode.insertBefore(selectAllBtn, fileTree);
+
+    const selectedCount = document.createElement('span');
+    selectedCount.id = 'selected-count';
+    selectedCount.className = 'selected-count';
+    selectedCount.style.display = 'none';
+
+    headerActions.appendChild(selectAllBtn);
+    headerActions.appendChild(selectedCount);
+    fileExplorerHeader.appendChild(headerActions);
+
+    // const fileTree = document.getElementById('file-tree');
+    // const selectAllBtn = document.createElement('button');
+    // selectAllBtn.className = 'select-all-btn';
+    // selectAllBtn.textContent = 'Select All';
+    // fileTree.parentNode.insertBefore(selectAllBtn, fileTree);
 
     let allSelected = false;
     selectAllBtn.addEventListener('click', () => {
@@ -503,6 +529,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function initializeDrawing() {
         const mapContainer = document.getElementById('map-container');
+        const dataViewer = document.getElementById('data-viewer');
+
+
         mapContainer.style.display = 'block';
         document.getElementById('no-data-message').style.display = 'none';
 
@@ -516,6 +545,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (polygonLayer) map.removeLayer(polygonLayer);
         if (resultLayer) map.removeLayer(resultLayer);
 
+        const existingControls = document.querySelector('.draw-controls');
+        if (existingControls) {
+            existingControls.remove();
+        }
+
         // Add drawing controls
         const drawControls = document.createElement('div');
         drawControls.className = 'draw-controls';
@@ -524,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <button id="clear-points" class="btn btn-secondary">Clear Points</button>
             <button id="start-analysis" class="btn btn-primary" style="display: none;">Start Analysis</button>
         `;
-        mapContainer.appendChild(drawControls);
+        mapContainer.insertAdjacentElement('afterend', drawControls);
 
         // Drawing functionality
         map.on('click', onMapClick);
@@ -591,13 +625,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 fileIds: Array.from(selectedFiles.keys())
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.features && data.fileIds) {
-                displayResults(data);
-            }
-        })
-        .catch(error => console.error('Error:', error));
+            .then(response => response.json())
+            .then(data => {
+                if (data.features && data.fileIds) {
+                    displayResults(data);
+                }
+            })
+            .catch(error => console.error('Error:', error));
     }
 
     function displayResults(data) {

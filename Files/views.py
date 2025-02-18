@@ -8,11 +8,14 @@ import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import GEOSGeometry
+from django.core.handlers.wsgi import WSGIRequest
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 from shapely.geometry import shape
+from django.contrib.gis.geos import Polygon, Point
+from django.contrib.gis.db.models.functions import Distance
 
 from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
@@ -598,14 +601,76 @@ def add_geojson_feature(geojson, geojson_feature):
 
 @require_http_methods(["POST"])
 def analyze_files(request):
+    '''
+    se supone que le llega el perimetro del area a buscar y los ficheros seleccionados
+    si no sabes donde tienes los datos, puedes seleccioanrlos todos y buscar entre todos
+    si sabes que pueden estar en unos en concreto pero no recuerdas en cual, puedes buscar entre ellos
+    - podrias darle a visualizar los ficheros y navegar con el mapa
+    - y si no recuerdas donde esta el fichero?
+    - aparte, tu quiza recuerdas que en la zona de lleida (provincia) tienes los ficheros F1, F2 y F3.
+        - aqui tu puedes elegir buscar cuales son los ficheros que tienen geometrias de Lleida (ciudad)
+        - sin embargo, quiza no recuerdes que también tenías el fichero F4, relativo al municipio de Lleida.
+        - por tanto, el resultado de la busqueda será:
+            - Ficheros resultantes de los que tu has seleccionado
+            - Ficheros resultantes del resto que no has seleccionado, por si acaso
+    '''
     data = json.loads(request.body)
-    files = data.get('files', [])
-    analysis_type = data.get('analysisType')
+    files = data.get('fileIds', [])
+    points = data.get('points', [])
+    if not files or not points:
+        return JsonResponse({'error': 'No results found'}, status=404)
 
-    results = f"Analysis results for {len(files)} files"
-    matching_files = files  # In this example, all files match
+    # TODO
+    analysis_type = data.get('analysisType', 'default')
+    if analysis_type == 'default':
+        return find_content_by_area(files, points, request)
+    elif analysis_type == 'find_content_by_area':
+        return find_content_by_area(files, points, request)
+    return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+def find_content_by_area(selected_files: list, points: list, request: WSGIRequest) -> JsonResponse:
+    # closing the polygon
+    roi = Polygon(points + [points[0]])
+
+    max_dist = max(Point(p1).distance(Point(p2)) for p1 in points for p2 in points)
+    search_threshold = max_dist * 0.05
+
+    contained = GeoJSONFeature.objects.filter(geometry__contained=roi)
+    intersected = GeoJSONFeature.objects.filter(geometry__intersects=roi)
+    near = GeoJSONFeature.objects.annotate(dist=Distance('geometry', roi)).filter(dist__lte=search_threshold)
+
+    found_contained_files = contained.only('file').only('pk')
+    found_intersected_files = contained.only('file').only('pk')
+    found_near_files = contained.only('file').only('pk')
+
+    # mirar entre los files seleccionados
+    matching_contained_files = any([file.pk for file in found_contained_files if file.pk in selected_files])
+    matching_intersected_files = any([file.pk for file in found_intersected_files if file.pk in selected_files])
+    matching_near_files = any([file.pk for file in found_near_files if file.pk in selected_files])
+
+    all_files_ids = get_user_files(request)
+
+    non_matching_contained_files = any([file.pk for file in found_contained_files if file.pk not in selected_files and file.pk in all_files_ids])
+    non_matching_intersected_files = any([file.pk for file in found_intersected_files if file.pk not in selected_files and file.pk in all_files_ids])
+    non_matching_near_files = any([file.pk for file in found_near_files if file.pk not in selected_files and file.pk in all_files_ids])
 
     return JsonResponse({
-        "results": results,
-        "matchingFiles": matching_files
+        "matching_contained_files": matching_contained_files,
+        "matching_intersected_files": matching_intersected_files,
+        "matching_near_files": matching_near_files,
+        "non_matching_contained_files": non_matching_contained_files,
+        "non_matching_intersected_files": non_matching_intersected_files,
+        "non_matching_near_files": non_matching_near_files
     })
+
+
+def get_user_files(request: WSGIRequest) -> list:
+    current_user = request.user
+    user_projects = json.loads(get_user_projects(current_user).content.decode('utf-8'))['projects']
+    files_ids = []
+    for project in user_projects:
+        user_files = get_user_project_files(current_user, project['name'])
+        for file in user_files:
+            files_ids.append(file.pk)
+    return files_ids
