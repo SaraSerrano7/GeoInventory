@@ -8,23 +8,21 @@ import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import Polygon
 from django.core.handlers.wsgi import WSGIRequest
+from django.db import connection
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 from shapely.geometry import shape
-from django.contrib.gis.geos import Polygon, Point
-from django.contrib.gis.db.models.functions import Distance
-from django.db import connection
-
-from django.contrib.gis.db.models import Q
-# from django.contrib.gis.db.models.functions import GeometryDump
-
 
 from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
     Classification, GeoJSON, GEOJSON_TYPE_CHOICES, GeoJSONFeature, PropertyAttribute, GeoJSONFeatureProperties
+
+
+# from django.contrib.gis.db.models.functions import GeometryDump
 
 
 # @login_required
@@ -635,9 +633,10 @@ def analyze_files(request):
 
 
 def find_content_by_area(selected_files: list, points: list, request: WSGIRequest) -> JsonResponse:
-
     # id, file_id, geometry, matching_type
     found_features = search_geometries_in_roi(points)
+    found_contained_files = [feature[1] for feature in found_features if feature[3] == 'Contenida']
+    found_intersected_files = [feature[1] for feature in found_features if feature[3] == 'Intersectando']
 
     # closing the polygon
     # roi = Polygon(points + [points[0]])
@@ -654,23 +653,26 @@ def find_content_by_area(selected_files: list, points: list, request: WSGIReques
     # found_near_files = near.only('file').only('pk')
 
     # mirar entre los files seleccionados
-    # matching_contained_files = any([file.pk for file in found_contained_files if file.pk in selected_files])
-    # matching_intersected_files = any([file.pk for file in found_intersected_files if file.pk in selected_files])
+    matching_contained_files = any([file.pk for file in found_contained_files if file.pk in selected_files])
+    matching_intersected_files = any([file.pk for file in found_intersected_files if file.pk in selected_files])
     # matching_near_files = any([file.pk for file in found_near_files if file.pk in selected_files])
 
     all_files_ids = get_user_files(request)
 
-    non_matching_contained_files = any([file.pk for file in found_contained_files if file.pk not in selected_files and file.pk in all_files_ids])
-    non_matching_intersected_files = any([file.pk for file in found_intersected_files if file.pk not in selected_files and file.pk in all_files_ids])
-    non_matching_near_files = any([file.pk for file in found_near_files if file.pk not in selected_files and file.pk in all_files_ids])
+    non_matching_contained_files = any(
+        [file.pk for file in found_contained_files if file.pk not in selected_files and file.pk in all_files_ids])
+    non_matching_intersected_files = any(
+        [file.pk for file in found_intersected_files if file.pk not in selected_files and file.pk in all_files_ids])
+    # non_matching_near_files = any(
+    #     [file.pk for file in found_near_files if file.pk not in selected_files and file.pk in all_files_ids])
 
     return JsonResponse({
         "matching_contained_files": matching_contained_files,
         "matching_intersected_files": matching_intersected_files,
-        "matching_near_files": matching_near_files,
+        # "matching_near_files": matching_near_files,
         "non_matching_contained_files": non_matching_contained_files,
         "non_matching_intersected_files": non_matching_intersected_files,
-        "non_matching_near_files": non_matching_near_files
+        # "non_matching_near_files": non_matching_near_files
     })
 
 
@@ -720,7 +722,6 @@ WHERE ST_Intersects(
         results = cursor.fetchall()
 
     return results
-
 
 
 def get_user_files(request: WSGIRequest) -> list:
