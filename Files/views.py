@@ -16,6 +16,11 @@ from django.views.decorators.http import require_http_methods
 from shapely.geometry import shape
 from django.contrib.gis.geos import Polygon, Point
 from django.contrib.gis.db.models.functions import Distance
+from django.db import connection
+
+from django.contrib.gis.db.models import Q
+# from django.contrib.gis.db.models.functions import GeometryDump
+
 
 from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
@@ -630,24 +635,28 @@ def analyze_files(request):
 
 
 def find_content_by_area(selected_files: list, points: list, request: WSGIRequest) -> JsonResponse:
+
+    # id, file_id, geometry, matching_type
+    found_features = search_geometries_in_roi(points)
+
     # closing the polygon
-    roi = Polygon(points + [points[0]])
+    # roi = Polygon(points + [points[0]])
 
-    max_dist = max(Point(p1).distance(Point(p2)) for p1 in points for p2 in points)
-    search_threshold = max_dist * 0.05
+    # max_dist = max(Point(p1).distance(Point(p2)) for p1 in points for p2 in points)
+    # search_threshold = max_dist * 0.05
 
-    contained = GeoJSONFeature.objects.filter(geometry__contained=roi)
-    intersected = GeoJSONFeature.objects.filter(geometry__intersects=roi)
-    near = GeoJSONFeature.objects.annotate(dist=Distance('geometry', roi)).filter(dist__lte=search_threshold)
+    # contained = GeoJSONFeature.objects.filter(geometry__contained=roi)
+    # intersected = GeoJSONFeature.objects.filter(geometry__intersects=roi)
+    # near = GeoJSONFeature.objects.annotate(dist=Distance('geometry', roi)).filter(dist__lte=search_threshold)
 
-    found_contained_files = contained.only('file').only('pk')
-    found_intersected_files = contained.only('file').only('pk')
-    found_near_files = contained.only('file').only('pk')
+    # found_contained_files = contained.only('file').only('pk')
+    # found_intersected_files = intersected.only('file').only('pk')
+    # found_near_files = near.only('file').only('pk')
 
     # mirar entre los files seleccionados
-    matching_contained_files = any([file.pk for file in found_contained_files if file.pk in selected_files])
-    matching_intersected_files = any([file.pk for file in found_intersected_files if file.pk in selected_files])
-    matching_near_files = any([file.pk for file in found_near_files if file.pk in selected_files])
+    # matching_contained_files = any([file.pk for file in found_contained_files if file.pk in selected_files])
+    # matching_intersected_files = any([file.pk for file in found_intersected_files if file.pk in selected_files])
+    # matching_near_files = any([file.pk for file in found_near_files if file.pk in selected_files])
 
     all_files_ids = get_user_files(request)
 
@@ -663,6 +672,55 @@ def find_content_by_area(selected_files: list, points: list, request: WSGIReques
         "non_matching_intersected_files": non_matching_intersected_files,
         "non_matching_near_files": non_matching_near_files
     })
+
+
+def search_geometries_in_roi(roi_points: list) -> list:
+    roiX = Polygon(roi_points + [roi_points[0]])
+    roi = Polygon([(point[1], point[0]) for point in roi_points] + [(roi_points[0][1], roi_points[0][0])])
+
+    roi_wkt = roi.wkt
+    # roi_wkt = roi.geojson
+    # roi_wkt2 = "E'" + roi.wkt
+
+    query = """
+        WITH multipoligonos AS (
+    -- Extraemos cada polígono del MULTIPOLYGON como una geometría individual
+    SELECT (ST_Dump(geometry)).geom AS poligono_individual,
+    id,
+    file_id
+    FROM public."Files_geojsonfeature"
+    -- WHERE id = 1
+)
+SELECT 
+    id,
+    file_id,
+    poligono_individual, 
+    'Contenida' AS tipo
+FROM multipoligonos
+WHERE ST_Within(
+    poligono_individual, 
+    ST_GeomFromText(%s, 4326)
+)
+
+UNION ALL
+
+SELECT 
+    id,
+    file_id,
+    poligono_individual, 
+    'Intersectando' AS tipo
+FROM multipoligonos
+WHERE ST_Intersects(
+    poligono_individual, 
+    ST_GeomFromText(%s, 4326)
+);
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(query, [roi_wkt, roi_wkt])
+        results = cursor.fetchall()
+
+    return results
+
 
 
 def get_user_files(request: WSGIRequest) -> list:
