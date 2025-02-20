@@ -4,6 +4,7 @@ Files' app views to develop file management functions
 
 import json
 
+import requests
 # Create your views here.
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -561,7 +562,7 @@ def get_file_content(request):
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-def build_geojson(geojson_file):
+def build_geojson(geojson_file: GeoJSON):
     geojson = {}
 
     geojson_type = geojson_file.content_type
@@ -638,42 +639,48 @@ def find_content_by_area(selected_files: list, points: list, request: WSGIReques
     found_contained_files = [feature[1] for feature in found_features if feature[3] == 'Contenida']
     found_intersected_files = [feature[1] for feature in found_features if feature[3] == 'Intersectando']
 
-    # closing the polygon
-    # roi = Polygon(points + [points[0]])
-
     # max_dist = max(Point(p1).distance(Point(p2)) for p1 in points for p2 in points)
     # search_threshold = max_dist * 0.05
 
-    # contained = GeoJSONFeature.objects.filter(geometry__contained=roi)
-    # intersected = GeoJSONFeature.objects.filter(geometry__intersects=roi)
     # near = GeoJSONFeature.objects.annotate(dist=Distance('geometry', roi)).filter(dist__lte=search_threshold)
 
-    # found_contained_files = contained.only('file').only('pk')
-    # found_intersected_files = intersected.only('file').only('pk')
-    # found_near_files = near.only('file').only('pk')
-
-    # mirar entre los files seleccionados
-    matching_contained_files = any([file.pk for file in found_contained_files if file.pk in selected_files])
-    matching_intersected_files = any([file.pk for file in found_intersected_files if file.pk in selected_files])
+    matching_contained_files = [fileId for fileId in found_contained_files if str(fileId) in selected_files]
+    matching_intersected_files = [fileId for fileId in found_intersected_files if str(fileId) in selected_files]
     # matching_near_files = any([file.pk for file in found_near_files if file.pk in selected_files])
 
     all_files_ids = get_user_files(request)
 
-    non_matching_contained_files = any(
-        [file.pk for file in found_contained_files if file.pk not in selected_files and file.pk in all_files_ids])
-    non_matching_intersected_files = any(
-        [file.pk for file in found_intersected_files if file.pk not in selected_files and file.pk in all_files_ids])
+    non_matching_contained_files = [file for file in all_files_ids if file not in matching_contained_files]
+    non_matching_intersected_files = [file for file in all_files_ids if file not in matching_contained_files]
     # non_matching_near_files = any(
     #     [file.pk for file in found_near_files if file.pk not in selected_files and file.pk in all_files_ids])
 
+    matching_contained_files_content = build_geojson_files(matching_contained_files)
+    matching_intersected_files_content = build_geojson_files(matching_intersected_files)
+    # TODO los primeros ficheros estan bugueados, pero esto deberia funcionar
+    # non_matching_contained_files_content = build_geojson_files(non_matching_contained_files)
+    # non_matching_intersected_files_content = build_geojson_files(non_matching_intersected_files)
+
+
     return JsonResponse({
-        "matching_contained_files": matching_contained_files,
-        "matching_intersected_files": matching_intersected_files,
+        "matching_contained_files": matching_contained_files_content,
+        "matching_intersected_files": matching_intersected_files_content,
         # "matching_near_files": matching_near_files,
-        "non_matching_contained_files": non_matching_contained_files,
-        "non_matching_intersected_files": non_matching_intersected_files,
+        # "non_matching_contained_files": non_matching_contained_files_content,
+        # "non_matching_intersected_files": non_matching_intersected_files_content,
         # "non_matching_near_files": non_matching_near_files
     })
+
+
+def build_geojson_files(files: list[int]) -> list[dict]:
+    files_content = []
+    for fileId in files:
+        file = GeoJSON.objects.get(pk=fileId)
+        files_content.append({
+            'file_id': file.pk,
+            'file_content': build_geojson(file)
+        })
+    return files_content
 
 
 def search_geometries_in_roi(roi_points: list) -> list:
@@ -726,10 +733,10 @@ WHERE ST_Intersects(
 
 def get_user_files(request: WSGIRequest) -> list:
     current_user = request.user
-    user_projects = json.loads(get_user_projects(current_user).content.decode('utf-8'))['projects']
+    user_projects = requests.get('http://127.0.0.1:8000/api/user_projects/', cookies=request.COOKIES).json()['projects']
     files_ids = []
     for project in user_projects:
         user_files = get_user_project_files(current_user, project['name'])
         for file in user_files:
-            files_ids.append(file.pk)
+            files_ids.append(file['id'])
     return files_ids
