@@ -628,32 +628,59 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                 console.log('received', data)
-                if (data.features && data.fileIds) {
+                if (data) {
                     displayResults(data);
                 }
+            //    TODO si no se han encontrado ficheros, popup warning
             })
             .catch(error => console.error('Error:', error));
     }
 
     function displayResults(data) {
         // Clear previous results
+
+        console.log(resultLayer)
         if (resultLayer) map.removeLayer(resultLayer);
 
-        // Display results on map
-        resultLayer = L.geoJSON(data.features, {
-            style: {
-                color: '#00ff00',
-                weight: 2,
-                opacity: 0.7,
-                fillColor: '#00ff00',
-                fillOpacity: 0.3
-            }
-        }).addTo(map);
+        console.log(data)
+        var geojsons = []
+        var file_ids = []
+
+        for (const [matching_type, files] of Object.entries(data)) {
+            files.forEach(file => {
+                file_ids.push(file['file_id'])
+                geojsons.push(file['file_content'])
+            })
+        }
+
+        // data.forEach(matching_file_types => {
+        //     matching_file_types.forEach(file => {
+        //         file_ids.push(file['file_id'])
+        //         geojsons.push(file['file_content'])
+        //     })
+        // })
+
+        console.log(geojsons)
+        console.log(file_ids)
+
+        geojsons.forEach(geojson => {
+            // Display results on map
+            resultLayer = L.geoJSON(geojson, {
+                style: {
+                    color: '#00ff00',
+                    weight: 2,
+                    opacity: 0.7,
+                    fillColor: '#00ff00',
+                    fillOpacity: 0.3
+                }
+            }).addTo(map);
+        })
+
 
         // Highlight matching files
         document.querySelectorAll('.file-item').forEach(item => {
             item.style.backgroundColor = '';
-            if (data.fileIds.includes(parseInt(item.id))) {
+            if (file_ids.includes(parseInt(item.id))) {
                 item.style.backgroundColor = 'rgba(0, 255, 0, 0.2)';
             }
         });
@@ -683,6 +710,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Remove drawing controls
         document.querySelector('.draw-controls').remove();
+
+        // TODO Uncheck
+        const checkboxes = document.querySelectorAll('.file-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = allSelected;
+        })
     }
 
 });
