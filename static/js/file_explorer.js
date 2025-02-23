@@ -628,10 +628,14 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                 console.log('received', data)
-                if (data) {
+                if (data && data.matching_contained_files.length > 0 || data.matching_intersected_files.length > 0) {
                     displayResults(data);
+                } else {
+            alert("No files matching the selected area were found");
+
+
                 }
-            //    TODO si no se han encontrado ficheros, popup warning
+                //    TODO si no se han encontrado ficheros, popup warning
             })
             .catch(error => console.error('Error:', error));
     }
@@ -672,6 +676,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     opacity: 0.7,
                     fillColor: '#00ff00',
                     fillOpacity: 0.3
+                },
+                onEachFeature: (feature, layer) => {
+                    if (feature.properties) {
+                        layer.bindPopup(
+                            createPropertiesPopup(feature.properties)
+                        );
+                    }
                 }
             }).addTo(map);
         })
@@ -684,6 +695,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 item.style.backgroundColor = 'rgba(0, 255, 0, 0.2)';
             }
         });
+
+        // Remove drawing controls
+        document.getElementById('clear-points').style.display = 'none';
+        document.getElementById('start-analysis').style.display = 'none';
+        // document.querySelector('.draw-controls').remove();
+
+        // Drawing functionality
+        map.off('click', onMapClick);
 
         // Add finish button
         const finishBtn = document.createElement('button');
@@ -714,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // TODO Uncheck
         const checkboxes = document.querySelectorAll('.file-checkbox');
         checkboxes.forEach(checkbox => {
-            checkbox.checked = allSelected;
+            checkbox.checked = false;
         })
     }
 
