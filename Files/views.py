@@ -147,7 +147,9 @@ def get_categories(request):
 @transaction.atomic
 def upload_file(request):
     try:
+        print('AAAAAAAAA')
         file_name = request.POST.get("fileName")
+        print('file_name', file_name)
         file_project = request.POST.get("project")
         file_location = request.POST.get("location")
         file_teams = request.POST.get("teams")
