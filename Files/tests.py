@@ -111,7 +111,7 @@ class SimpleTest(TestCase):
 
                 # Crear el FormData con el archivo leído
                 form_data = {
-                    "fileName": (None, filename),
+                    "fileName": filename,
                     "project": (None, self.project.name),
                     "location": (None, self.project.name),
                     "teams": (None, json.dumps([self.team.name])),
