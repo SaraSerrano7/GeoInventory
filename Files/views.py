@@ -151,10 +151,15 @@ def upload_file(request):
         file_name = request.POST.get("fileName")
         print('file_name', file_name)
         file_project = request.POST.get("project")
+        print('file_project', file_project)
         file_location = request.POST.get("location")
+        print('file_location', file_location)
         file_teams = request.POST.get("teams")
+        print('file_teams', file_teams)
         file_categories = request.POST.get("categories")
+        print('file_categories', file_categories)
         geojson_content = request.FILES["geojson_file"].read().decode("utf-8")
+        print('geojson_content', geojson_content)
 
         if not geojson_content:
             return JsonResponse({"error": "No se recibió un GeoJSON válido"}, status=400)

@@ -99,7 +99,7 @@ class SimpleTest(TestCase):
     def _sample_data_creation(self):
         files = [f for f in os.listdir(self.sample_folder) if f.endswith(".geojson")]
         for filename in files:
-            print(filename)
+            # print(filename)
             with self.subTest(geojson_file=filename):
                 file_path = os.path.join(self.sample_folder, filename)
 
@@ -107,15 +107,15 @@ class SimpleTest(TestCase):
                 with open(file_path, "r", encoding="utf-8") as f:
                     geojson_content = f.read()
 
-                print(geojson_content)
+                # print(geojson_content)
 
                 # Crear el FormData con el archivo leído
                 form_data = {
                     "fileName": filename,
-                    "project": (None, self.project.name),
-                    "location": (None, self.project.name),
-                    "teams": (None, json.dumps([self.team.name])),
-                    "categories": (None, json.dumps('')),
+                    "project": self.project.name,
+                    "location": self.project.name,
+                    "teams": json.dumps([self.team.name]),
+                    "categories": json.dumps([]),
                 }
 
                 files_data = {
