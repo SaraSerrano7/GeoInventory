@@ -7,6 +7,7 @@ from datetime import datetime
 
 import requests
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 # Create your tests here.
@@ -104,10 +105,10 @@ class SimpleTest(TestCase):
                 file_path = os.path.join(self.sample_folder, filename)
 
                 # Leer el contenido del archivo
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, "rb") as f:
                     geojson_content = f.read()
 
-                # print(geojson_content)
+                # print('open rb file', geojson_content)
 
                 # Crear el FormData con el archivo leído
                 form_data = {
@@ -119,15 +120,19 @@ class SimpleTest(TestCase):
                 }
 
                 files_data = {
-                    "geojson_file": (filename, geojson_content, "application/json"),
+                    "geojson_file": SimpleUploadedFile(name=filename, content=geojson_content, content_type="application/json"),
                 }
 
                 # Enviar la solicitud POST
                 self.client.login(username="creatorUser", password="jamon")
                 response = self.client.post(
                     self.upload_endpoint,
-                    data=form_data,
-                    files=files_data)
+                    data={**form_data, **files_data})
+                    # =form_data,
+                    # files=files_data)
+
+                print('response', response)
+                print('response.content', response.content)
 
                 # Verificar que el backend responde correctamente
                 self.assertEqual(response.status_code, 200, f"Error al subir {filename}: {response}")

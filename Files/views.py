@@ -158,6 +158,12 @@ def upload_file(request):
         print('file_teams', file_teams)
         file_categories = request.POST.get("categories")
         print('file_categories', file_categories)
+
+        print('HERE COMES REQUEST', request.FILES)
+
+        print('GEOJSON', request.FILES["geojson_file"])
+
+
         geojson_content = request.FILES["geojson_file"].read().decode("utf-8")
         print('geojson_content', geojson_content)
 
@@ -240,6 +246,8 @@ def upload_file(request):
     except json.JSONDecodeError as e:
         return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
     except Exception as e:
+        print('ERROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOR')
+        print('e', e)
         return JsonResponse({
             'status': 'error',
             'message': str(e)
