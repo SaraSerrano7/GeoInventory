@@ -248,6 +248,7 @@ def upload_file(request):
     except Exception as e:
         # print('ERROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOR')
         # print('e', e)
+        # print(GeoJSONFeature.__dict__)
         return JsonResponse({
             'status': 'error',
             'message': str(e)
@@ -263,11 +264,14 @@ def create_feature(geojson_file, geojson_data):
         "type": geometry_type,
         "coordinates": coordinates
     })
+    # print('before creating geojsonfeature')
+    # print(geojson_file)
     geojsonfeature = GeoJSONFeature.objects.create(
         file=geojson_file,
         feature_type=geometry_type,
         geometry=GEOSGeometry(feature.wkt)
     )
+    # print('after creating geojsonfeature')
 
     properties = geojson_data['properties']
     for (key, value) in properties.items():

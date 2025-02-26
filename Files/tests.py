@@ -10,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 # Create your tests here.
-from Files.models import Role, Team, Membership, Project, Assignations
+from Files.models import Role, Team, Membership, Project, Assignations, GeoJSONFeature
 
 
 class SimpleTest(TestCase):
@@ -90,18 +90,12 @@ class SimpleTest(TestCase):
         else:
             self._sample_data_creation()
 
-    def _real_data_creation(self, files: list):
-        end_time = datetime.now()
-        print(f'Ending test at {end_time}')
-        print(f'Real data creation test duration: {end_time - self.start_time}')
-        print('----------------------------------------------\n\n')
 
+    def _test_creation(self, files: list, target_folder: str):
 
-    def _sample_data_creation(self):
-        files = [f for f in os.listdir(self.sample_folder) if f.endswith(".geojson")]
         for filename in files:
             with self.subTest(geojson_file=filename):
-                file_path = os.path.join(self.sample_folder, filename)
+                file_path = os.path.join(target_folder, filename)
 
                 with open(file_path, "rb") as f:
                     geojson_content = f.read()
@@ -115,7 +109,8 @@ class SimpleTest(TestCase):
                 }
 
                 files_data = {
-                    "geojson_file": SimpleUploadedFile(name=filename, content=geojson_content,
+                    "geojson_file": SimpleUploadedFile(name=filename,
+                                                       content=geojson_content,
                                                        content_type="application/json"),
                 }
 
@@ -125,7 +120,59 @@ class SimpleTest(TestCase):
                     self.upload_endpoint,
                     data={**form_data, **files_data})
 
+                # print(response.content)
+
                 self.assertEqual(response.status_code, 200, f"Error al subir {filename}: {response}")
+
+
+    def _real_data_creation(self, files: list):
+        # print('Files found', files)
+        # print(GeoJSONFeature.objects.count())
+        self._test_creation(files[:1], self.test_folder)
+        print(f'{GeoJSONFeature.objects.count()} features created')
+        # TODO printear facil para luego coger datos para graficos
+        # TODO dejar en testoutput
+        # TODO añadir nº features, tiempo
+
+        end_time = datetime.now()
+        print(f'Ending test at {end_time}')
+        print(f'Real data creation test duration: {end_time - self.start_time}')
+        print('----------------------------------------------\n\n')
+
+
+    def _sample_data_creation(self):
+        files = [f for f in os.listdir(self.sample_folder) if f.endswith(".geojson")]
+        self._test_creation(files, self.sample_folder)
+        # for filename in files:
+        #     with self.subTest(geojson_file=filename):
+        #         file_path = os.path.join(self.sample_folder, filename)
+        #
+        #         with open(file_path, "rb") as f:
+        #             geojson_content = f.read()
+        #
+        #         form_data = {
+        #             "fileName": filename,
+        #             "project": self.project.name,
+        #             "location": self.project.name,
+        #             "teams": json.dumps([self.team.name]),
+        #             "categories": json.dumps([]),
+        #         }
+        #
+        #         files_data = {
+        #             "geojson_file": SimpleUploadedFile(name=filename,
+        #                                                content=geojson_content,
+        #                                                content_type="application/json"),
+        #         }
+        #
+        #         self.client.login(username="creatorUser", password="jamon")
+        #
+        #         response = self.client.post(
+        #             self.upload_endpoint,
+        #             data={**form_data, **files_data})
+        #
+        #         print(response.content)
+        #
+        #         self.assertEqual(response.status_code, 200, f"Error al subir {filename}: {response}")
 
         end_time = datetime.now()
         print(f'Ending test at {end_time}')

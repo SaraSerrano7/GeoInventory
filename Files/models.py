@@ -322,7 +322,7 @@ class PropertyAttribute(models.Model):
 class GeoJSONFeatureProperties(models.Model):
     feature = models.ForeignKey(GeoJSONFeature, on_delete=models.SET_NULL, blank=True, null=True)
     attribute = models.ForeignKey(PropertyAttribute, on_delete=models.SET_NULL, null=True, blank=True)
-    attribute_value = models.CharField(max_length=250)
+    attribute_value = models.CharField(max_length=250, blank=True, null=True)
 
     def __str__(self):
         return f"{self.attribute} = {self.attribute_value}"
