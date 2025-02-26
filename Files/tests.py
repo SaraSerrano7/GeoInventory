@@ -83,10 +83,8 @@ class SimpleTest(TestCase):
         cls.assignation = assignation
 
     def test_sample_creation(self):
-        # print(f'starting searching in {self.test_folder}')
-        # print(os.listdir(self.test_folder))
         files = [f for f in os.listdir(self.test_folder) if f.endswith(".geojson")]
-        # print(f'files found: {files}')
+
         if files:
             self._real_data_creation(files)
         else:
@@ -96,21 +94,18 @@ class SimpleTest(TestCase):
         end_time = datetime.now()
         print(f'Ending test at {end_time}')
         print(f'Real data creation test duration: {end_time - self.start_time}')
+        print('----------------------------------------------\n\n')
+
 
     def _sample_data_creation(self):
         files = [f for f in os.listdir(self.sample_folder) if f.endswith(".geojson")]
         for filename in files:
-            # print(filename)
             with self.subTest(geojson_file=filename):
                 file_path = os.path.join(self.sample_folder, filename)
 
-                # Leer el contenido del archivo
                 with open(file_path, "rb") as f:
                     geojson_content = f.read()
 
-                # print('open rb file', geojson_content)
-
-                # Crear el FormData con el archivo leído
                 form_data = {
                     "fileName": filename,
                     "project": self.project.name,
@@ -124,22 +119,16 @@ class SimpleTest(TestCase):
                                                        content_type="application/json"),
                 }
 
-                # Enviar la solicitud POST
                 self.client.login(username="creatorUser", password="jamon")
+
                 response = self.client.post(
                     self.upload_endpoint,
                     data={**form_data, **files_data})
-                # =form_data,
-                # files=files_data)
 
-                # print('response', response)
-                # print('response.content', response.content)
-
-                # Verificar que el backend responde correctamente
                 self.assertEqual(response.status_code, 200, f"Error al subir {filename}: {response}")
 
         end_time = datetime.now()
-        # print(f'Ending test at {end_time}')
+        print(f'Ending test at {end_time}')
         print(f'Test data creation test duration: {end_time - self.start_time}')
         print('----------------------------------------------\n\n')
 
