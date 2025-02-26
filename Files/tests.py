@@ -5,7 +5,6 @@ import json
 import os
 from datetime import datetime
 
-import requests
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -26,6 +25,7 @@ class SimpleTest(TestCase):
 
     def setUp(self):
         self.start_time = datetime.now()
+        print('\n\n----------------------------------------------')
         print(f'Starting test at {self.start_time}')
         '''
         User → test_user
@@ -83,10 +83,10 @@ class SimpleTest(TestCase):
         cls.assignation = assignation
 
     def test_sample_creation(self):
-        print(f'starting searching in {self.test_folder}')
-        print(os.listdir(self.test_folder))
+        # print(f'starting searching in {self.test_folder}')
+        # print(os.listdir(self.test_folder))
         files = [f for f in os.listdir(self.test_folder) if f.endswith(".geojson")]
-        print(f'files found: {files}')
+        # print(f'files found: {files}')
         if files:
             self._real_data_creation(files)
         else:
@@ -120,7 +120,8 @@ class SimpleTest(TestCase):
                 }
 
                 files_data = {
-                    "geojson_file": SimpleUploadedFile(name=filename, content=geojson_content, content_type="application/json"),
+                    "geojson_file": SimpleUploadedFile(name=filename, content=geojson_content,
+                                                       content_type="application/json"),
                 }
 
                 # Enviar la solicitud POST
@@ -128,20 +129,22 @@ class SimpleTest(TestCase):
                 response = self.client.post(
                     self.upload_endpoint,
                     data={**form_data, **files_data})
-                    # =form_data,
-                    # files=files_data)
+                # =form_data,
+                # files=files_data)
 
-                print('response', response)
-                print('response.content', response.content)
+                # print('response', response)
+                # print('response.content', response.content)
 
                 # Verificar que el backend responde correctamente
                 self.assertEqual(response.status_code, 200, f"Error al subir {filename}: {response}")
 
         end_time = datetime.now()
-        print(f'Ending test at {end_time}')
+        # print(f'Ending test at {end_time}')
         print(f'Test data creation test duration: {end_time - self.start_time}')
+        print('----------------------------------------------\n\n')
 
     def test_data_analysis(self):
         end_time = datetime.now()
         print(f'Ending test at {end_time}')
         print(f'Data analysis test duration: {end_time - self.start_time}')
+        print('----------------------------------------------\n\n')

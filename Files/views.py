@@ -147,25 +147,25 @@ def get_categories(request):
 @transaction.atomic
 def upload_file(request):
     try:
-        print('AAAAAAAAA')
+        # print('AAAAAAAAA')
         file_name = request.POST.get("fileName")
-        print('file_name', file_name)
+        # print('file_name', file_name)
         file_project = request.POST.get("project")
-        print('file_project', file_project)
+        # print('file_project', file_project)
         file_location = request.POST.get("location")
-        print('file_location', file_location)
+        # print('file_location', file_location)
         file_teams = request.POST.get("teams")
-        print('file_teams', file_teams)
+        # print('file_teams', file_teams)
         file_categories = request.POST.get("categories")
-        print('file_categories', file_categories)
+        # print('file_categories', file_categories)
 
-        print('HERE COMES REQUEST', request.FILES)
+        # print('HERE COMES REQUEST', request.FILES)
 
-        print('GEOJSON', request.FILES["geojson_file"])
+        # print('GEOJSON', request.FILES["geojson_file"])
 
 
         geojson_content = request.FILES["geojson_file"].read().decode("utf-8")
-        print('geojson_content', geojson_content)
+        # print('geojson_content', geojson_content)
 
         if not geojson_content:
             return JsonResponse({"error": "No se recibió un GeoJSON válido"}, status=400)
@@ -246,8 +246,8 @@ def upload_file(request):
     except json.JSONDecodeError as e:
         return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
     except Exception as e:
-        print('ERROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOR')
-        print('e', e)
+        # print('ERROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOR')
+        # print('e', e)
         return JsonResponse({
             'status': 'error',
             'message': str(e)
