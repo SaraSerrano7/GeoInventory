@@ -10,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 # Create your tests here.
-from Files.models import Role, Team, Membership, Project, Assignations, GeoJSONFeature
+from Files.models import Role, Team, Membership, Project, Assignations, GeoJSONFeature, GeoJSONFeatureProperties
 
 
 class SimpleTest(TestCase):
@@ -26,7 +26,7 @@ class SimpleTest(TestCase):
     def setUp(self):
         self.start_time = datetime.now()
         print('\n\n----------------------------------------------')
-        print(f'Starting test at {self.start_time}')
+        print(f'Starting tests at {self.start_time}\n')
         '''
         User → test_user
         Role → creator
@@ -90,7 +90,6 @@ class SimpleTest(TestCase):
         else:
             self._sample_data_creation()
 
-
     def _test_creation(self, files: list, target_folder: str):
 
         for filename in files:
@@ -124,21 +123,25 @@ class SimpleTest(TestCase):
 
                 self.assertEqual(response.status_code, 200, f"Error al subir {filename}: {response}")
 
+                end_time = datetime.now()
+                print(f'Ending {filename} test at {end_time}')
+                print(f'{GeoJSONFeature.objects.count()} features created ({GeoJSONFeatureProperties.objects.count()} properties created)')
+
+                print(f'Creation test duration: {end_time - self.start_time}\n')
 
     def _real_data_creation(self, files: list):
         # print('Files found', files)
         # print(GeoJSONFeature.objects.count())
         self._test_creation(files, self.test_folder)
-        print(f'{GeoJSONFeature.objects.count()} features created')
+        # print(f'{GeoJSONFeature.objects.count()} features created ({GeoJSONFeatureProperties.objects.count()} properties created)')
         # TODO printear facil para luego coger datos para graficos
         # TODO dejar en testoutput
         # TODO añadir nº features, tiempo
 
-        end_time = datetime.now()
-        print(f'Ending test at {end_time}')
-        print(f'Real data creation test duration: {end_time - self.start_time}')
-        print('----------------------------------------------\n\n')
-
+        # end_time = datetime.now()
+        # print(f'Ending test at {end_time}')
+        # print(f'Real data creation test duration: {end_time - self.start_time}')
+        # print('----------------------------------------------\n\n')
 
     def _sample_data_creation(self):
         files = [f for f in os.listdir(self.sample_folder) if f.endswith(".geojson")]
