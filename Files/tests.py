@@ -128,7 +128,7 @@ class SimpleTest(TestCase):
     def _real_data_creation(self, files: list):
         # print('Files found', files)
         # print(GeoJSONFeature.objects.count())
-        self._test_creation(files[:1], self.test_folder)
+        self._test_creation(files, self.test_folder)
         print(f'{GeoJSONFeature.objects.count()} features created')
         # TODO printear facil para luego coger datos para graficos
         # TODO dejar en testoutput
