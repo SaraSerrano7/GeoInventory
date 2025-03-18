@@ -255,6 +255,147 @@ def upload_file(request):
         }, status=500)
 
 
+
+@login_required
+@require_http_methods(["POST"])
+@transaction.atomic
+def upload_file2(request):
+    try:
+        file_name = request.POST.get("fileName")
+        file_project = request.POST.get("project")
+        file_location = request.POST.get("location")
+        file_teams = request.POST.get("teams")
+        file_categories = request.POST.get("categories")
+
+        geojson_content = request.FILES["geojson_file"].read().decode("utf-8")
+
+        if not geojson_content:
+            return JsonResponse({"error": "No se recibió un GeoJSON válido"}, status=400)
+
+        teams_list = json.loads(file_teams)
+        categories_list = json.loads(file_categories)
+        geojson_data = json.loads(geojson_content)
+
+        content_type = geojson_data['type']
+        content_type_id = GEOJSON_TYPE_CHOICES.index((content_type, content_type))
+        current_user_object = User.objects.get(pk=request.user.id)
+        geojson_file = GeoJSON.objects.create(
+            creator=current_user_object,
+            content_type=content_type_id,
+            name=file_name
+        )
+        geojson_file_instance = File.objects.get(id=geojson_file.id)
+
+        teams = list(Team.objects.filter(name__in=teams_list))
+        access_objs = [
+            Access(accessed_file=geojson_file_instance, accessing_team=team)
+            for team in teams
+        ]
+        Access.objects.bulk_create(access_objs)
+
+        project = Project.objects.get(name=file_project)
+
+        project = Project.objects.get(name=file_project)
+
+        if file_location == file_project:
+            location = Location.objects.create(
+                located_folder=None,
+                located_project=project,
+                located_file=geojson_file_instance
+            )
+        else:
+            folder = Folder.objects.filter(path=file_location)
+            if not folder.exists():
+                file_location_path = file_location.split('/')
+                if len(file_location_path) == 1 or (
+                        len(file_location_path) == 2 and file_location_path[0] == file_project
+                ):
+                    name = file_location_path[1] if len(file_location_path) == 2 else file_location_path[0]
+                    folder = Folder.objects.create(name=name, parent=None)
+                else:
+                    folder = build(file_location_path)
+            else:
+                folder = folder.first()
+            location = Location.objects.create(
+                located_folder=folder,
+                located_project=project,
+                located_file=geojson_file_instance
+            )
+
+        if categories_list:
+            categories = list(Category.objects.filter(label__in=categories_list))
+            classification_objs = [
+                Classification(related_file=geojson_file, category_name=cat)
+                for cat in categories
+            ]
+            Classification.objects.bulk_create(classification_objs)
+
+        # Añadir cada feature del geojson
+        if content_type == 'Feature':
+            create_features_bulk(geojson_file, [geojson_data])
+        else:
+            features_list = geojson_data.get('features', [])
+            create_features_bulk(geojson_file, features_list)
+
+        return JsonResponse({'status': 'success'}, status=200)
+    except json.JSONDecodeError as e:
+            return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+def create_features_bulk(geojson_file, features_list):
+    """
+    Crea en bloque las instancias de GeoJSONFeature y sus propiedades asociadas.
+    """
+    from shapely.geometry import shape
+
+    # Acumular instancias de features sin guardar y sus propiedades asociadas
+    features_to_create = []
+    properties_mapping = []  # Lista paralela de diccionarios de propiedades
+    for feature_data in features_list:
+        geometry_data = feature_data['geometry']
+        geometry_type = geometry_data["type"]
+        coordinates = geometry_data["coordinates"]
+
+        # Convertir a objeto GEOSGeometry
+        shapely_obj = shape({"type": geometry_type, "coordinates": coordinates})
+        geos_geom = GEOSGeometry(shapely_obj.wkt)
+
+        features_to_create.append(
+            GeoJSONFeature(file=geojson_file, feature_type=geometry_type, geometry=geos_geom)
+        )
+        # Guardamos las propiedades (puede ser un diccionario vacío si no existen)
+        properties_mapping.append(feature_data.get("properties", {}))
+
+    # Bulk create de GeoJSONFeature
+    created_features = GeoJSONFeature.objects.bulk_create(features_to_create)
+
+    # Preparar listas para bulk_create de PropertyAttribute y GeoJSONFeatureProperties
+    pa_objs = []  # Instancias de PropertyAttribute (sin guardar)
+    feature_prop_tuples = []  # Tuplas para asociar cada feature con el valor de su propiedad
+
+    for feature_obj, properties in zip(created_features, properties_mapping):
+        for key, value in properties.items():
+            # Se determina el tipo de dato; se usa json.loads para garantizar la conversión
+            attribute_type = type(json.loads(f'"{value}"'))
+            pa_objs.append(PropertyAttribute(attribute_name=key, attribute_type=attribute_type))
+            feature_prop_tuples.append((feature_obj, value))
+
+    # Bulk create de PropertyAttribute
+    # Nota: Esto asume que bulk_create retorna los objetos creados con sus IDs (compatible con tu backend y versión de Django)
+    created_pa_objs = PropertyAttribute.objects.bulk_create(pa_objs)
+
+    # Asociar cada PropertyAttribute creada a su feature correspondiente
+    feature_properties_to_create = []
+    for (feature_obj, value), pa_obj in zip(feature_prop_tuples, created_pa_objs):
+        feature_properties_to_create.append(
+            GeoJSONFeatureProperties(feature=feature_obj, attribute=pa_obj, attribute_value=value)
+        )
+    GeoJSONFeatureProperties.objects.bulk_create(feature_properties_to_create)
+
+
 def create_feature(geojson_file, geojson_data):
     geometry = geojson_data['geometry']
     geometry_type = geometry["type"]

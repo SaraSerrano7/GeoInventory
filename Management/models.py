@@ -1,6 +1,6 @@
 """
 These model classes control user permissions for
-creating/updating/deleting other admin users.
+creating/updating/deleting other.txt admin users.
 """
 
 from django.contrib.auth import get_user_model
