@@ -84,15 +84,27 @@ for key in cred_keys:
     keys[key[0]] = key[1][1:-1]
 
 DATABASES = {
-   'default': {
-       'ENGINE': 'django.contrib.gis.db.backends.postgis',
-       'NAME': keys['NAME'],
-       'USER': keys['USER'],
-       'PASSWORD': keys['PASSWORD'],
-       'HOST': keys['HOST'],
-       'PORT': keys['PORT'],
-   }
+	'default': {
+    	'ENGINE': 'djongo',
+    	'NAME': 'geoinventory',
+    	'CLIENT': {
+        	'host': 'mongodb://admin:jamon@localhost:27017/',
+            'authSource': 'geoinventory',
+    	},
+    }
 }
+
+
+# DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+#        'NAME': keys['NAME'],
+#        'USER': keys['USER'],
+#        'PASSWORD': keys['PASSWORD'],
+#        'HOST': keys['HOST'],
+#        'PORT': keys['PORT'],
+#    }
+# }
 
 # DATABASES = {
 #     'default': {
