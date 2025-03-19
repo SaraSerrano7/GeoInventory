@@ -88,7 +88,9 @@ DATABASES = {
     	'ENGINE': 'djongo',
     	'NAME': 'geoinventory',
     	'CLIENT': {
-        	'host': 'mongodb://admin:jamon@localhost:27017/',
+        	'host': 'mongodb://admin:1234@localhost:8090/',
+            # 27017: local
+            # 8090 + tunel ssh -> VPS
             'authSource': 'geoinventory',
     	},
     }

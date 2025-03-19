@@ -305,7 +305,9 @@ class GeoJSONFeature(models.Model):
     """
     file = models.ForeignKey(GeoJSON, on_delete=models.SET_NULL, null=True, blank=True)
     feature_type = models.CharField(max_length=50, choices=GEOJSON_GEOMETRY_TYPE_CHOICES)
-    geometry = models.GeometryField(null=True, blank=True)
+    # geometry = models.GeometryField(null=True, blank=True)
+    # TODO guardar aqui el geojsonfield
+    geometry = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return str(self.feature_type) + str(self.pk)

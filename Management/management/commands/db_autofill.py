@@ -1,3 +1,4 @@
+import json
 from typing import Type
 
 from astroid.interpreter.objectmodel import ObjectModel
@@ -350,11 +351,15 @@ class Command(BaseCommand):
         )
 
         multipolygon2 = MultiPolygon(polygon1, polygon2)
+        print(type(multipolygon1.geojson))
+        print(type(json.loads(multipolygon2.geojson),))
 
         features_data = [
-            {"feature_type": 4, "geometry": multipolygon1, "file": geojson},
-            {"feature_type": 4, "geometry": multipolygon2, "file": geojson},
+            {"feature_type": 4, "geometry": json.loads(multipolygon1.geojson), "file": geojson},
+            {"feature_type": 4, "geometry": json.loads(multipolygon2.geojson), "file": geojson},
         ]
+
+        print(type(features_data[0]["geometry"]))  # Esto debe imprimir <class 'dict'>
 
         self.create_objects(notice_message, features_data, GeoJSONFeature)
 
@@ -379,6 +384,8 @@ class Command(BaseCommand):
         feature1 = GeoJSONFeature.objects.get(id=1)
         feature2 = GeoJSONFeature.objects.get(id=2)
 
+        print('type', type(feature2.geometry))
+
         attribute1 = PropertyAttribute.objects.get(attribute_name="crop")
         attribute2 = PropertyAttribute.objects.get(attribute_name="owner")
         attribute3 = PropertyAttribute.objects.get(attribute_name="yield")
@@ -392,7 +399,7 @@ class Command(BaseCommand):
         self.create_objects(notice_message, properties_data, GeoJSONFeatureProperties)
 
     def db_autofill(self):
-        self.chech_postgis_extensions()
+        # self.chech_postgis_extensions()
         self.create_users()
         self.create_roles()
         self.create_global_roles()

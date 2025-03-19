@@ -22,6 +22,8 @@ from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
     Classification, GeoJSON, GEOJSON_TYPE_CHOICES, GeoJSONFeature, PropertyAttribute, GeoJSONFeatureProperties
 
+from django.conf import settings
+from pymongo import MongoClient
 
 # from django.contrib.gis.db.models.functions import GeometryDump
 
@@ -85,13 +87,13 @@ def get_user_projects(request):
 
         user_global_role = GlobalMembership.objects.get(related_user=request.user.id)
         if user_global_role.user_type.name == 'superadmin':
-            projects = Project.objects.filter(active=True).values('pk', 'name')
+            projects = Project.objects.filter(active__in=[True]).values('pk', 'name')
         else:
             user_teams = find_user_teams(request.user)
             user_assignations = Assignations.objects.filter(assignated_team__in=user_teams)
             user_projects = user_assignations.values(
                 'assignated_project')  # [assignation.assignated_project for assignation in user_assignations]
-            projects = Project.objects.filter(pk__in=user_projects, active=True).values('pk', 'name')
+            projects = Project.objects.filter(pk__in=user_projects, active__in=[True]).values('pk', 'name')
 
         # projects = Project.objects.filter(users=request.user).values('id', 'name')
         return JsonResponse({'projects': list(projects)})
@@ -147,25 +149,14 @@ def get_categories(request):
 @transaction.atomic
 def upload_file(request):
     try:
-        # print('AAAAAAAAA')
         file_name = request.POST.get("fileName")
-        # print('file_name', file_name)
         file_project = request.POST.get("project")
-        # print('file_project', file_project)
         file_location = request.POST.get("location")
-        # print('file_location', file_location)
         file_teams = request.POST.get("teams")
-        # print('file_teams', file_teams)
         file_categories = request.POST.get("categories")
-        # print('file_categories', file_categories)
-
-        # print('HERE COMES REQUEST', request.FILES)
-
-        # print('GEOJSON', request.FILES["geojson_file"])
 
 
         geojson_content = request.FILES["geojson_file"].read().decode("utf-8")
-        # print('geojson_content', geojson_content)
 
         if not geojson_content:
             return JsonResponse({"error": "No se recibió un GeoJSON válido"}, status=400)
@@ -213,11 +204,7 @@ def upload_file(request):
                     folder = Folder.objects.create(name=name, parent=None)
                 else:
 
-                    # def getFolderParent(folder_name):
-
                     folder = build(file_location_path)
-
-                    # Folder.objects.create(name=???, parent=???)
             else:
                 folder = folder.first()
             location = Location.objects.create(
@@ -233,7 +220,6 @@ def upload_file(request):
                 classification = Classification.objects.create(related_file=geojson_file, category_name=category)
 
         # Add each geojson feature
-        # content_type
         if content_type == 'Feature':
             create_feature(geojson_file, geojson_data)
 
@@ -264,14 +250,14 @@ def create_feature(geojson_file, geojson_data):
         "type": geometry_type,
         "coordinates": coordinates
     })
-    # print('before creating geojsonfeature')
-    # print(geojson_file)
+
     geojsonfeature = GeoJSONFeature.objects.create(
         file=geojson_file,
         feature_type=geometry_type,
-        geometry=GEOSGeometry(feature.wkt)
+        # TODO geometry=geometry
+        geometry=geometry,
+        # geometry=GEOSGeometry(feature.wkt)
     )
-    # print('after creating geojsonfeature')
 
     properties = geojson_data['properties']
     for (key, value) in properties.items():
@@ -608,7 +594,7 @@ def build_geojson(geojson_file: GeoJSON):
 
 
 def add_geojson_feature(geojson, geojson_feature):
-    geojson['geometry'] = json.loads(geojson_feature.geometry.geojson)
+    geojson['geometry'] = geojson_feature.geometry
     properties = {}
 
     feature_properties_list = GeoJSONFeatureProperties.objects.filter(feature=geojson_feature)
@@ -654,7 +640,7 @@ def analyze_files(request):
 
 def find_content_by_area(selected_files: list, points: list, request: WSGIRequest) -> JsonResponse:
     # id, file_id, geometry, matching_type
-    found_features = search_geometries_in_roi(points)
+    found_features = search_geometries_in_roi_mongo(points)
     found_contained_files = [feature[1] for feature in found_features if feature[3] == 'Contenida']
     found_intersected_files = [feature[1] for feature in found_features if feature[3] == 'Intersectando']
 
@@ -700,6 +686,50 @@ def build_geojson_files(files: list[int]) -> list[dict]:
             'file_content': build_geojson(file)
         })
     return files_content
+
+def search_geometries_in_roi_mongo(roi_points: list) -> list:
+    print(settings)
+    mongo_config = settings.DATABASES['default']['CLIENT']
+    mongo_host = mongo_config['host']
+    mongo_db_name = settings.DATABASES['default']['NAME']
+    mongo_auth_source = mongo_config.get('authSource', 'admin')
+
+    client = MongoClient(mongo_host, authSource=mongo_auth_source)
+    db = client[mongo_db_name]
+    geojsonfeature_collection = db['files_geojsonfeature']
+
+    roi = Polygon([(point[1], point[0]) for point in roi_points] + [(roi_points[0][1], roi_points[0][0])])
+    roi_geojson = json.loads(roi.geojson)
+
+    print(geojsonfeature_collection)
+    print(roi_geojson)
+
+    contained_results = list(geojsonfeature_collection.find({
+        "geometry": {
+            "$geoWithin": {
+                "$geometry": roi_geojson
+            }
+        }
+    }))
+
+    intersecting_results = list(geojsonfeature_collection.find({
+        "geometry": {
+            "$geoIntersects": {
+                "$geometry": roi_geojson
+            }
+        }
+    }))
+
+    print(contained_results)
+    print(intersecting_results)
+
+    results = []
+    for doc in contained_results:
+        results.append((doc["_id"], doc["file_id"], doc["geometry"], "Contenida"))
+    for doc in intersecting_results:
+        results.append((doc["_id"], doc["file_id"], doc["geometry"], "Intersectando"))
+
+    return results
 
 
 def search_geometries_in_roi(roi_points: list) -> list:

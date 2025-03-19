@@ -1,0 +1,32 @@
+This version of djongo does not support "NULL, NOT NULL column validation check" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using CONSTRAINT" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using KEY" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using REFERENCES" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "column type validation" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using NULL" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "COLUMN DROP NOT NULL " fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "DROP CASCADE" fully. Visit https://nesdis.github.io/djongo/support/
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-03-19 14:54:26.604976
+
+Ending test at 2025-03-19 14:54:26.605015
+Data analysis test duration: 0:00:00.000039
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-03-19 14:54:29.717912
+
+Ending FeaturePoligon.geojson test at 2025-03-19 14:54:30.748475
+1 features created (2 properties created)
+Creation test duration: 0:00:01.030563
+
+Ending SIGPAC_13_Barcelones_fragment.geojson test at 2025-03-19 14:54:46.674987
+8 features created (177 properties created)
+Creation test duration: 0:00:16.957075
+
