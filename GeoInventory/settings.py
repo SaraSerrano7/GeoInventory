@@ -78,18 +78,18 @@ WSGI_APPLICATION = 'GeoInventory.wsgi.application'
 with open('GeoInventory/config/db.conf') as db_file:
     credentials = db_file.read()
 
-cred_keys = [key.split('=') for key in credentials.split('\n')]
-keys = {}
-for key in cred_keys:
-    if key != []:
-        keys[key[0]] = key[1][1:-1]
+#cred_keys = [key.split('=') for key in credentials.split('\n')]
+#keys = {}
+#for key in cred_keys:
+#    if key != []:
+#        keys[key[0]] = key[1][1:-1]
 
 DATABASES = {
 	'default': {
     	'ENGINE': 'djongo',
     	'NAME': 'geoinventory',
     	'CLIENT': {
-        	'host': 'mongodb://admin:1234@localhost:8090/',
+        	'host': 'mongodb://admin:1234@localhost:27017/',
             # 27017: local
             # 8090 + tunel ssh -> VPS
             'authSource': 'geoinventory',
