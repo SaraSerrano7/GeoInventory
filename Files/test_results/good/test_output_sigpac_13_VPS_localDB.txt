@@ -1,0 +1,21 @@
+Found 2 test(s).
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-02-27 22:14:51.076743
+
+Ending test at 2025-02-27 22:14:51.076776
+Data analysis test duration: 0:00:00.000033
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-02-27 22:14:51.078497
+
+Ending SIGPAC_13_Barcelones.geojson test at 2025-02-27 22:16:05.658147
+4504 features created (112600 properties created)
+Creation test duration: 0:01:14.579650
+

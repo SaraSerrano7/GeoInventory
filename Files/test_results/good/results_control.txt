@@ -1,0 +1,38 @@
+Found 2 test(s).
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-02-27 16:43:59.254735
+
+Ending test at 2025-02-27 16:43:59.254757
+Data analysis test duration: 0:00:00.000022
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-02-27 16:43:59.256636
+
+Ending FeatureCollectionPoligon.geojson test at 2025-02-27 16:43:59.678073
+2 features created (10 properties created)
+Creation test duration: 0:00:00.421437
+
+Ending FeaturePoligon.geojson test at 2025-02-27 16:43:59.995179
+3 features created (12 properties created)
+Creation test duration: 0:00:00.738543
+
+Ending FeatureMultipoligon.geojson test at 2025-02-27 16:44:00.292696
+4 features created (17 properties created)
+Creation test duration: 0:00:01.036060
+
+Ending FeatureCollectionMultipoligon.geojson test at 2025-02-27 16:44:00.587550
+6 features created (27 properties created)
+Creation test duration: 0:00:01.330914
+
+Ending test at 2025-02-27 16:44:00.588267
+Test data creation test duration: 0:00:01.331631
+----------------------------------------------
+
+

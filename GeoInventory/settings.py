@@ -81,7 +81,8 @@ with open('GeoInventory/config/db.conf') as db_file:
 cred_keys = [key.split('=') for key in credentials.split('\n')]
 keys = {}
 for key in cred_keys:
-    keys[key[0]] = key[1][1:-1]
+	if key != ['']:
+		keys[key[0]] = key[1][1:-1]
 
 DATABASES = {
    'default': {
@@ -143,3 +144,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+CRLF_TRUSTED_ORIGINS=['http://geoinventory.irtav7.cat']
