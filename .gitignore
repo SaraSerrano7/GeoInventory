@@ -7,3 +7,4 @@ GeoInventory/config/db.conf
 Api/migrations/
 Files/migrations/
 Management/migrations
+Files/test_data/
