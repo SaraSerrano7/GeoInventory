@@ -1,0 +1,21 @@
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-04-16 23:54:36.197867
+
+Ending test at 2025-04-16 23:54:36.197880
+Data analysis test duration: 0:00:00.000013
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-04-16 23:54:36.200087
+
+Operación completada exitosamente.
+Ending FeaturePoligon.geojson test at 2025-04-16 23:54:36.325126
+1 features created (2 properties created)
+Creation test duration: 0:00:00.125039
+

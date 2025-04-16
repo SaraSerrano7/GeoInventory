@@ -22,6 +22,9 @@ from Management.models import GlobalMembership, GlobalRole
 from .models import File, Project, Assignations, Membership, Folder, Location, Access, Team, Category, \
     Classification, GeoJSON, GEOJSON_TYPE_CHOICES, GeoJSONFeature, PropertyAttribute, GeoJSONFeatureProperties
 
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 
 # from django.contrib.gis.db.models.functions import GeometryDump
 
@@ -147,25 +150,13 @@ def get_categories(request):
 @transaction.atomic
 def upload_file(request):
     try:
-        # print('AAAAAAAAA')
         file_name = request.POST.get("fileName")
-        # print('file_name', file_name)
         file_project = request.POST.get("project")
-        # print('file_project', file_project)
         file_location = request.POST.get("location")
-        # print('file_location', file_location)
         file_teams = request.POST.get("teams")
-        # print('file_teams', file_teams)
         file_categories = request.POST.get("categories")
-        # print('file_categories', file_categories)
-
-        # print('HERE COMES REQUEST', request.FILES)
-
-        # print('GEOJSON', request.FILES["geojson_file"])
-
 
         geojson_content = request.FILES["geojson_file"].read().decode("utf-8")
-        # print('geojson_content', geojson_content)
 
         if not geojson_content:
             return JsonResponse({"error": "No se recibió un GeoJSON válido"}, status=400)
@@ -177,82 +168,361 @@ def upload_file(request):
         # Create GeoJSONFile
         content_type = geojson_data['type']
         content_type_id = GEOJSON_TYPE_CHOICES.index((content_type, content_type))
-        current_user_object = User.objects.get(pk=request.user.id)
-        geojson_file = GeoJSON.objects.create(
-            creator=current_user_object,
-            content_type=content_type_id,
-            name=file_name
-        )
 
-        geojson_file_instance = File.objects.get(id=geojson_file.id)
+        sql_queries(request_user_id=request.user.id,
+                    content_type_id=content_type_id,
+                    file_name=file_name,
+                    teams_list=teams_list,
+                    file_project=file_project,
+                    file_location=file_location,
+                    categories_list=categories_list,
+                    geojson_data=geojson_data,
+                    content_type=content_type)
 
-        # Define file access
-        for team_name in teams_list:
-            team = Team.objects.get(name=team_name)
-            access = Access.objects.create(accessed_file=geojson_file_instance, accessing_team=team)
-
-        project = Project.objects.get(name=file_project)
-
-        # Locate Folder
-        if file_location == file_project:
-
-            location = Location.objects.create(
-                located_folder=None,
-                located_project=project,
-                located_file=geojson_file_instance
-            )
-        else:
-            folder = Folder.objects.filter(path=file_location)
-            if not folder.exists():
-                # si estamos aqui, la folder no es Project root
-                # pero puede tener parents
-                file_location_path = file_location.split('/')
-                if len(file_location_path) == 1 or (
-                        len(file_location_path) == 2 and file_location_path[0] == file_project):
-                    name = file_location_path[1] if len(file_location_path) == 2 else file_location_path[0]
-                    folder = Folder.objects.create(name=name, parent=None)
-                else:
-
-                    # def getFolderParent(folder_name):
-
-                    folder = build(file_location_path)
-
-                    # Folder.objects.create(name=???, parent=???)
-            else:
-                folder = folder.first()
-            location = Location.objects.create(
-                located_folder=folder,
-                located_project=project,
-                located_file=geojson_file_instance
-            )
-
-        # Classify file
-        if categories_list:
-            for category_name in categories_list:
-                category = Category.objects.get(label=category_name)
-                classification = Classification.objects.create(related_file=geojson_file, category_name=category)
-
-        # Add each geojson feature
-        # content_type
-        if content_type == 'Feature':
-            create_feature(geojson_file, geojson_data)
-
-        else:
-            for feature in geojson_data['features']:
-                create_feature(geojson_file, feature)
-                pass
+        # current_user_object = User.objects.get(pk=request.user.id)
+        # geojson_file = GeoJSON.objects.create(
+        #     creator=current_user_object,
+        #     content_type=content_type_id,
+        #     name=file_name
+        # )
+        #
+        # geojson_file_instance = File.objects.get(id=geojson_file.id)
+        #
+        # # Define file access
+        # for team_name in teams_list:
+        #     team = Team.objects.get(name=team_name)
+        #     access = Access.objects.create(accessed_file=geojson_file_instance, accessing_team=team)
+        #
+        # project = Project.objects.get(name=file_project)
+        #
+        # # Locate Folder
+        # if file_location == file_project:
+        #
+        #     location = Location.objects.create(
+        #         located_folder=None,
+        #         located_project=project,
+        #         located_file=geojson_file_instance
+        #     )
+        # else:
+        #     folder = Folder.objects.filter(path=file_location)
+        #     if not folder.exists():
+        #         # si estamos aqui, la folder no es Project root
+        #         # pero puede tener parents
+        #         file_location_path = file_location.split('/')
+        #         if len(file_location_path) == 1 or (
+        #                 len(file_location_path) == 2 and file_location_path[0] == file_project):
+        #             name = file_location_path[1] if len(file_location_path) == 2 else file_location_path[0]
+        #             folder = Folder.objects.create(name=name, parent=None)
+        #         else:
+        #
+        #             folder = build(file_location_path)
+        #     else:
+        #         folder = folder.first()
+        #     location = Location.objects.create(
+        #         located_folder=folder,
+        #         located_project=project,
+        #         located_file=geojson_file_instance
+        #     )
+        #
+        # # Classify file
+        # if categories_list:
+        #     for category_name in categories_list:
+        #         category = Category.objects.get(label=category_name)
+        #         classification = Classification.objects.create(related_file=geojson_file, category_name=category)
+        #
+        # # Add each geojson feature
+        # if content_type == 'Feature':
+        #     create_feature(geojson_file, geojson_data)
+        #
+        # else:
+        #     for feature in geojson_data['features']:
+        #         create_feature(geojson_file, feature)
 
         return JsonResponse({'status': 'success'}, status=200)
     except json.JSONDecodeError as e:
         return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
     except Exception as e:
-        # print('ERROOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOR')
-        # print('e', e)
-        # print(GeoJSONFeature.__dict__)
         return JsonResponse({
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+
+def sql_queries(request_user_id, content_type_id, file_name, teams_list,
+                file_project, file_location, categories_list,
+                geojson_data, content_type):
+    from django.conf import settings
+    from django.db import connection
+
+    with open('GeoInventory/config/db.conf') as db_file:
+        credentials = db_file.read()
+
+    cred_keys = [key.split('=') for key in credentials.split('\n')]
+    keys = {}
+    for key in cred_keys:
+        if key != ['']:
+            keys[key[0]] = key[1][1:-1]
+
+    DB_CONFIG = {
+        'host': settings.DATABASES['default']['HOST'] or 'localhost',
+        'database': settings.DATABASES['default']['NAME'],
+        'user': settings.DATABASES['default']['USER'],
+        'password': settings.DATABASES['default']['PASSWORD'],
+        'port': settings.DATABASES['default']['PORT'] or 5432,
+    }
+
+    try:
+        # Conectar a la base de datos
+        # conn = psycopg2.connect(**DB_CONFIG)
+        # # Utilizamos RealDictCursor para obtener resultados como diccionarios
+        # cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # Iniciar la transacción
+        # conn.autocommit = False
+
+        # 1. Obtener el usuario actual
+        # query_get_user = "SELECT * FROM public.auth_user WHERE id = %(user_id)s;"
+        # cur.execute(query_get_user, {'user_id': request_user_id})
+        # current_user_object = cur.fetchone()
+        current_user_object = None
+        with connection.cursor() as cur:
+            query_get_user = "SELECT * FROM public.auth_user WHERE id = %s;"
+            cur.execute(query_get_user, [request_user_id])
+            current_user_object = cur.fetchone()
+
+            if not current_user_object:
+                raise Exception("Usuario no encontrado")
+
+            # 2. Crear registro en GeoJSON
+            # query_create_geojson = """
+            #     INSERT INTO public."Files_geojson" (creator_id, content_type, name)
+            #     VALUES (%(creator_id)s, %(content_type)s, %(name)s)
+            #     RETURNING id;
+            #     """
+            query_create_geojson = """
+            WITH digital_resource AS (
+                INSERT INTO public."Files_digitalresource" (creator_id, created_at, deleted)
+                VALUES (%(creator_id)s, NOW(), false)
+                RETURNING id
+            ), file AS (
+                INSERT INTO public."Files_file" (digitalresource_ptr_id, name)
+                VALUES ((SELECT id FROM digital_resource), %(name)s)
+                RETURNING digitalresource_ptr_id
+            )
+            INSERT INTO public."Files_geojson" (file_ptr_id, content_type)
+            VALUES ((SELECT digitalresource_ptr_id FROM file), %(content_type)s) 
+            RETURNING file_ptr_id;
+            """
+
+            cur.execute(query_create_geojson, {
+                'creator_id': current_user_object[0],
+                'content_type': content_type_id,
+                'name': file_name
+            })
+            geojson_file = cur.fetchone()
+            geojson_file_id = geojson_file[0]
+
+            geojson_fields = GeoJSON._meta.fields
+            geojson_model_info = [(geojson_fields[i].name, attr) for i, attr in enumerate(geojson_file)]
+
+            # 3. Obtener el objeto File asociado. Nota: innecesario, sql solo me devolverá el id
+            # Suponiendo que la tabla file tiene el mismo id que geojson
+            query_get_file = """SELECT * FROM public."Files_file" WHERE digitalresource_ptr_id = %(file_id)s;"""
+            cur.execute(query_get_file, {'file_id': geojson_file_id})
+            geojson_file_instance = cur.fetchone()
+            if not geojson_file_instance:
+                raise Exception("No se encontró el registro en file para el GeoJSON creado")
+
+            # 4. Definir accesos para cada equipo en teams_list
+            for team_name in teams_list:
+                # 4.a Obtener el equipo
+                query_get_team = """SELECT * FROM public."Files_team" WHERE name = %(team_name)s;"""
+                cur.execute(query_get_team, {'team_name': team_name})
+                team = cur.fetchone()
+                if not team:
+                    raise Exception(f"Equipo {team_name} no encontrado")
+
+                # 4.b Crear el registro de acceso
+                query_create_access = """
+                    WITH digital_resource AS (
+                        INSERT INTO public."Files_digitalresource" (creator_id, created_at, deleted)
+                        VALUES (%(creator_id)s, NOW(), false)
+                        RETURNING id
+                    )
+                    
+                    INSERT INTO public."Files_access" (digitalresource_ptr_id, accessed_file_id, accessing_team_id)
+                    VALUES ((SELECT id FROM digital_resource), %(file_id)s, %(team_id)s);
+                    """
+                cur.execute(query_create_access, {
+                    'creator_id': current_user_object[0],
+                    'file_id': geojson_file_instance[0],
+                    'team_id': team[0]
+                })
+
+            # 5. Obtener el proyecto a partir de file_project
+            query_get_project = """SELECT * FROM public."Files_project" WHERE name = %(project_name)s;"""
+            cur.execute(query_get_project, {'project_name': file_project})
+            project = cur.fetchone()
+            if not project:
+                raise Exception("Proyecto no encontrado")
+
+            # 6. Ubicar Folder y registrar la ubicación (Location)
+            if file_location == file_project:
+                # Si file_location equivale al nombre del proyecto
+                query_create_location = """
+                    WITH digital_resource AS (
+                        INSERT INTO public."Files_digitalresource" (creator_id, created_at, deleted)
+                        VALUES (%(creator_id)s, NOW(), false)
+                        RETURNING id
+                    )
+                    
+                    INSERT INTO public."Files_location" (digitalresource_ptr_id, path, located_folder_id, located_project_id, located_file_id)
+                    VALUES ((SELECT id FROM digital_resource), '', NULL, %(project_id)s, %(file_id)s);
+                    """
+                cur.execute(query_create_location, {
+                    'creator_id': current_user_object[0],
+                    'project_id': project[0],
+                    'file_id': geojson_file_instance[0]
+                })
+            else:
+                # TODO
+                # Buscar si la carpeta ya existe
+                query_get_folder = "SELECT * FROM public.Files_Folder WHERE path = %(folder_path)s;"
+                cur.execute(query_get_folder, {'folder_path': file_location})
+                folder = cur.fetchone()
+
+                if not folder:
+                    # Si la carpeta no existe, se determina si es de raíz o se necesita construir la ruta.
+                    file_location_path = file_location.split('/')
+                    if len(file_location_path) == 1 or (
+                            len(file_location_path) == 2 and file_location_path[0] == file_project):
+                        # Carpeta sin padre (root o subcarpeta inmediata)
+                        # Si hay 2 elementos, usamos el segundo como nombre; si es 1, ese es el nombre.
+                        name = file_location_path[1] if len(file_location_path) == 2 else file_location_path[0]
+                        query_create_folder = """
+                            INSERT INTO public.Files_Folder (name, parent_id, path)
+                            VALUES (%(name)s, NULL, %(path)s)
+                            RETURNING id;
+                            """
+                        cur.execute(query_create_folder, {'name': name, 'path': file_location})
+                        folder = cur.fetchone()
+                    else:
+                        # Aquí se implementaría la lógica recursiva de 'build'
+                        # Para efectos de ejemplo, se simula la creación de la carpeta intermedia
+                        # Nota: Implementa la función build utilizando bucles y llamadas recursivas si es necesario
+                        # En este ejemplo, se crea la carpeta final sin procesar la jerarquía.
+                        query_create_folder = """
+                            INSERT INTO public.Files_Folder (name, parent_id, path)
+                            VALUES (%(name)s, NULL, %(path)s)
+                            RETURNING id;
+                            """
+                        cur.execute(query_create_folder, {'name': file_location_path[-1], 'path': file_location})
+                        folder = cur.fetchone()
+                # Crear la ubicación con la carpeta identificada
+                query_create_location = """
+                    INSERT INTO public.Files_Location (located_folder_id, located_project_id, located_file_id)
+                    VALUES (%(folder_id)s, %(project_id)s, %(file_id)s);
+                    """
+                cur.execute(query_create_location, {
+                    'folder_id': folder['id'],
+                    'project_id': project['id'],
+                    'file_id': geojson_file_instance['id']
+                })
+
+            # 7. Clasificar el archivo si hay categorías
+            if categories_list:
+                for category_name in categories_list:
+                    # Obtener la categoría
+                    query_get_category = "SELECT * FROM category WHERE label = %(label)s;"
+                    cur.execute(query_get_category, {'label': category_name})
+                    category = cur.fetchone()
+                    if not category:
+                        raise Exception(f"Categoría {category_name} no encontrada")
+                    # Crear la clasificación
+                    query_create_classification = """
+                        INSERT INTO classification (related_file_id, category_name_id)
+                        VALUES (%(file_id)s, %(category_id)s);
+                        """
+                    cur.execute(query_create_classification, {
+                        'file_id': geojson_file_id,
+                        'category_id': category['id']
+                    })
+
+            # 8. Crear GeoJSON Features y sus propiedades
+            def create_feature(geojson_file_id, feature_data):
+                # Extraer la geometría
+                geometry = feature_data['geometry']
+                geometry_type = geometry["type"]
+                # Convierte la geometría a WKT, suponiendo que usas la librería shapely
+                from shapely.geometry import shape
+                feature_shape = shape(geometry)
+                wkt = feature_shape.wkt
+
+                # Crear la feature
+                query_create_feature = """
+                    INSERT INTO public."Files_geojsonfeature" (file_id, feature_type, geometry)
+                    VALUES (%(file_id)s, %(feature_type)s, ST_GeomFromText(%(wkt)s))
+                    RETURNING id;
+                    """
+                cur.execute(query_create_feature, {
+                    'file_id': geojson_file_id,
+                    'feature_type': geometry_type,
+                    'wkt': wkt
+                })
+                geojsonfeature = cur.fetchone()
+                geojsonfeature_id = geojsonfeature[0]
+
+                # Insertar las propiedades (cada par clave-valor)
+                properties = feature_data.get('properties', {})
+                for key, value in properties.items():
+                    # Determinar el tipo de atributo; en este ejemplo simplemente se usa el nombre del tipo devuelto por type()
+                    attribute_type = type(value).__name__
+                    query_create_attribute = """
+                        INSERT INTO public."Files_propertyattribute" (attribute_name, attribute_type)
+                        VALUES (%(attribute_name)s, %(attribute_type)s)
+                        RETURNING id;
+                        """
+                    cur.execute(query_create_attribute, {
+                        'attribute_name': key,
+                        'attribute_type': attribute_type
+                    })
+                    property_attribute = cur.fetchone()
+                    property_attribute_id = property_attribute[0]
+
+                    query_create_feature_property = """
+                        INSERT INTO public."Files_geojsonfeatureproperties" (feature_id, attribute_id, attribute_value)
+                        VALUES (%(feature_id)s, %(attribute_id)s, %(attribute_value)s);
+                        """
+                    cur.execute(query_create_feature_property, {
+                        'feature_id': geojsonfeature_id,
+                        'attribute_id': property_attribute_id,
+                        'attribute_value': value
+                    })
+
+            # Llamar a create_feature en función del content_type y geojson_data recibido
+            if content_type == 'Feature':
+                create_feature(geojson_file_id, geojson_data)
+            else:
+                # Para cada feature en geojson_data['features']
+                for feature in geojson_data.get('features', []):
+                    create_feature(geojson_file_id, feature)
+
+        # Si todo fue exitoso, se confirma la transacción
+        # conn.commit()
+        print("Operación completada exitosamente.")
+
+    except Exception as e:
+        # En caso de error, se revierte la transacción
+        # if conn:
+        #     conn.rollback()
+        print(f"Error: {e}")
+
+    finally:
+        # Cerrar cursor y conexión
+        if cur:
+            cur.close()
+        # if conn:
+        #     conn.close()
 
 
 def create_feature(geojson_file, geojson_data):
@@ -264,14 +534,11 @@ def create_feature(geojson_file, geojson_data):
         "type": geometry_type,
         "coordinates": coordinates
     })
-    # print('before creating geojsonfeature')
-    # print(geojson_file)
     geojsonfeature = GeoJSONFeature.objects.create(
         file=geojson_file,
         feature_type=geometry_type,
         geometry=GEOSGeometry(feature.wkt)
     )
-    # print('after creating geojsonfeature')
 
     properties = geojson_data['properties']
     for (key, value) in properties.items():
@@ -301,7 +568,6 @@ def folderExists(name, path):
 def build(file_location_path):
     parent = file_location_path[:-1] if len(file_location_path) > 2 else file_location_path[:-1]
 
-    # if len(parent) == 1:
     # aqui hemos llegado a la subcarpeta antes de raiz
     parent_name = parent[0] if len(parent) == 1 else parent[-2]
     parent_path = parent_name  # None
@@ -679,7 +945,6 @@ def find_content_by_area(selected_files: list, points: list, request: WSGIReques
     # TODO los primeros ficheros estan bugueados, pero esto deberia funcionar
     # non_matching_contained_files_content = build_geojson_files(non_matching_contained_files)
     # non_matching_intersected_files_content = build_geojson_files(non_matching_intersected_files)
-
 
     return JsonResponse({
         "matching_contained_files": matching_contained_files_content,
