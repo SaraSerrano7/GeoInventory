@@ -7,7 +7,9 @@ from datetime import datetime
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
 from django.test import TestCase
+from django.contrib.auth.hashers import make_password
 
 # Create your tests here.
 from Files.models import Role, Team, Membership, Project, Assignations, GeoJSONFeature, GeoJSONFeatureProperties
@@ -39,49 +41,157 @@ class SimpleTest(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        user = User.objects.create_user(
-            username="creatorUser",
-            email="creatorUser@example.com",
-            password="jamon",
-            is_superuser=False,
-            is_staff=False
-        )
+        with connection.cursor() as cur:
+            plain = "jamon"
+            hashed = make_password(plain)
 
-        cls.user = user
+            query_create_user = """
+            INSERT INTO public.auth_user (username, email, password, is_superuser, is_staff, first_name, last_name, is_active, date_joined)
+            VALUES ('creatorUser', 'creatorUser@example.com', %(password)s, false, false, '', '', true, NOW())
+            returning id;
+            """
+            cur.execute(query_create_user, {
+                'password': hashed
+            })
+            user_id = cur.fetchone()[0]
 
-        role = Role.objects.create(
-            role_name="creator",
-            creator=user,
-        )
+            # user = User.objects.create_user(
+            #     username="creatorUser",
+            #     email="creatorUser@example.com",
+            #     password="jamon",
+            #     is_superuser=False,
+            #     is_staff=False
+            # )
 
-        cls.role = role
+            cls.user = user_id
 
-        team = Team.objects.create(
-            name="team_patata",
-        )
+            query_create_role = """
+            WITH digital_resource AS (
+                INSERT INTO public."Files_digitalresource" (creator_id, created_at, deleted)
+                VALUES (%(creator_id)s, NOW(), false)
+                RETURNING id
+            )
+            INSERT INTO public."Files_role" (digitalresource_ptr_id, role_name)
+            VALUES ((SELECT id FROM digital_resource), 'creator') 
+            RETURNING digitalresource_ptr_id;
+            """
 
-        cls.team = team
+            cur.execute(query_create_role, {
+                'creator_id': user_id,
+            })
+            role_id = cur.fetchone()[0]
 
-        membership = Membership.objects.create(
-            member=user,
-            user_role=role,
-            user_team=team
-        )
+        # role = Role.objects.create(
+        #     role_name="creator",
+        #     creator=user,
+        # )
 
-        cls.membership = membership
+            cls.role = role_id
 
-        project = Project.objects.create(
-            name="proyecto_cultivos_herbaceos",
-        )
+            query_create_team = """
+                WITH digital_resource AS (
+                    INSERT INTO public."Files_digitalresource" (creator_id, created_at, deleted)
+                    VALUES (%(creator_id)s, NOW(), false)
+                    RETURNING id
+                )
+                INSERT INTO public."Files_team" (digitalresource_ptr_id, name)
+                VALUES ((SELECT id FROM digital_resource), 'team_patata') 
+                RETURNING digitalresource_ptr_id, name;
+            """
 
-        cls.project = project
+            cur.execute(query_create_team, {
+                'creator_id': user_id,
+            })
+            team = cur.fetchone()
+            team_id = team[0]
+            team_name = team[1]
 
-        assignation = Assignations.objects.create(
-            assignated_project=project,
-            assignated_team=team,
-        )
+        # team = Team.objects.create(
+        #     name="team_patata",
+        # )
 
-        cls.assignation = assignation
+            cls.team = team_id
+            cls.team_name = team_name
+
+        # membership = Membership.objects.create(
+        #     member=user,
+        #     user_role=role,
+        #     user_team=team
+        # )
+        #
+        # cls.membership = membership
+
+            query_create_membership = """
+                WITH digital_resource AS (
+                    INSERT INTO public."Files_digitalresource" (creator_id, created_at, deleted)
+                    VALUES (%(creator_id)s, NOW(), false)
+                    RETURNING id
+                )
+                INSERT INTO public."Files_membership" (digitalresource_ptr_id, member_id, user_role_id, user_team_id)
+                VALUES ((SELECT id FROM digital_resource), %(member_id)s, %(user_role_id)s, %(user_team_id)s) 
+                RETURNING digitalresource_ptr_id;
+            """
+
+            cur.execute(query_create_membership, {
+                'creator_id': user_id,
+                'member_id': user_id,
+                'user_role_id': role_id,
+                'user_team_id': team_id,
+            })
+            membership_id = cur.fetchone()[0]
+            cls.membership = membership_id
+
+            query_create_project = """
+                WITH digital_resource AS (
+                    INSERT INTO public."Files_digitalresource" (creator_id, created_at, deleted)
+                    VALUES (%(creator_id)s, NOW(), false)
+                    RETURNING id
+                )
+                INSERT INTO public."Files_project" (digitalresource_ptr_id, name, active, finished)
+                VALUES ((SELECT id FROM digital_resource), 'proyecto_cultivos_herbaceos', true, false) 
+                RETURNING digitalresource_ptr_id, name;
+            """
+
+            cur.execute(query_create_project, {
+                'creator_id': user_id,
+            })
+            project = cur.fetchone()
+            project_id = project[0]
+            project_name = project[1]
+            cls.project = project_id
+            cls.project_name = project_name
+
+            query_create_assignations = """
+                WITH digital_resource AS (
+                    INSERT INTO public."Files_digitalresource" (creator_id, created_at, deleted)
+                    VALUES (%(creator_id)s, NOW(), false)
+                    RETURNING id
+                )
+                INSERT INTO public."Files_assignations" (digitalresource_ptr_id, assignated_project_id, assignated_team_id, assignation_date)
+                VALUES ((SELECT id FROM digital_resource), %(assignated_project_id)s, %(assignated_team_id)s, NOW()) 
+                RETURNING digitalresource_ptr_id;
+            """
+
+            cur.execute(query_create_assignations, {
+                'creator_id': user_id,
+                'assignated_project_id': project_id,
+                'assignated_team_id': team_id,
+            })
+            assignation_id = cur.fetchone()[0]
+            cls.assignation = assignation_id
+
+        # project = Project.objects.create(
+        #     name="proyecto_cultivos_herbaceos",
+        # )
+        #
+        # cls.project = project
+        #
+        # assignation = Assignations.objects.create(
+        #     assignated_project=project,
+        #     assignated_team=team,
+        # )
+        #
+        # cls.assignation = assignation
 
     def test_sample_creation(self):
         files = [f for f in os.listdir(self.test_folder) if f.endswith(".geojson")]
@@ -102,9 +212,9 @@ class SimpleTest(TestCase):
 
                 form_data = {
                     "fileName": filename,
-                    "project": self.project.name,
-                    "location": self.project.name,
-                    "teams": json.dumps([self.team.name]),
+                    "project": self.project_name,
+                    "location": self.project_name,
+                    "teams": json.dumps([self.team_name]),
                     "categories": json.dumps([]),
                 }
 
@@ -126,7 +236,25 @@ class SimpleTest(TestCase):
 
                 end_time = datetime.now()
                 print(f'Ending {filename} test at {end_time}')
-                print(f'{GeoJSONFeature.objects.count()} features created ({GeoJSONFeatureProperties.objects.count()} properties created)')
+
+                with connection.cursor() as cur:
+                    query_geojsonfeature_counter = """
+                        SELECT count(*) FROM public."Files_geojsonfeature"
+                    """
+                    cur.execute(query_geojsonfeature_counter, {})
+                    geojsonfeature_counter = cur.fetchone()[0]
+
+                    query_geojsonfeatureproperties_counter = """
+                                            SELECT count(*) FROM public."Files_geojsonfeatureproperties"
+                                        """
+                    cur.execute(query_geojsonfeatureproperties_counter, {})
+                    geojsonfeatureproperties_counter = cur.fetchone()[0]
+
+                # print(
+                #     f'{GeoJSONFeature.objects.count()} features created ({GeoJSONFeatureProperties.objects.count()} properties created)')
+
+                print(
+                    f'{geojsonfeature_counter} features created ({geojsonfeatureproperties_counter} properties created)')
 
                 print(f'Creation test duration: {end_time - self.start_time}\n')
 

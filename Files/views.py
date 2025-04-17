@@ -525,7 +525,7 @@ def sql_queries(request_user_id, content_type_id, file_name, teams_list,
         #     conn.close()
 
 
-def create_feature(geojson_file, geojson_data):
+def create_featureX(geojson_file, geojson_data):
     geometry = geojson_data['geometry']
     geometry_type = geometry["type"]
     coordinates = geometry["coordinates"]
