@@ -1,0 +1,28 @@
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-04-18 17:05:42.615595
+
+Ending test at 2025-04-18 17:05:42.615612
+Data analysis test duration: 0:00:00.000017
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-04-18 17:05:42.617955
+
+Ending SIGPAC_17_Garraf.geojson test at 2025-04-18 17:08:18.641489
+0 features created (0 properties created)
+Creation test duration: 0:02:36.023534
+
+Ending FeaturePoligon.geojson test at 2025-04-18 17:08:18.847606
+0 features created (0 properties created)
+Creation test duration: 0:02:36.229651
+
+Ending SIGPAC_13_Barcelones.geojson test at 2025-04-18 17:09:07.503822
+0 features created (0 properties created)
+Creation test duration: 0:03:24.885867
+

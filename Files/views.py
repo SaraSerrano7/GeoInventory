@@ -7,6 +7,7 @@ import json
 import requests
 # Create your views here.
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import Polygon
@@ -145,7 +146,8 @@ def get_categories(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@login_required
+# @login_required
+@csrf_exempt
 @require_http_methods(["POST"])
 @transaction.atomic
 def upload_file(request):
@@ -286,6 +288,9 @@ def sql_queries(request_user_id, content_type_id, file_name, teams_list,
         # current_user_object = cur.fetchone()
         current_user_object = None
         with connection.cursor() as cur:
+            if not request_user_id:
+                request_user_id = 1
+
             query_get_user = "SELECT * FROM public.auth_user WHERE id = %s;"
             cur.execute(query_get_user, [request_user_id])
             current_user_object = cur.fetchone()
