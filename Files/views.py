@@ -288,8 +288,11 @@ def sql_queries(request_user_id, content_type_id, file_name, teams_list,
         # current_user_object = cur.fetchone()
         current_user_object = None
         with connection.cursor() as cur:
+
+            user_id = request_user_id if request_user_id else 1
+
             query_get_user = "SELECT * FROM public.auth_user WHERE id = %s;"
-            cur.execute(query_get_user, [request_user_id])
+            cur.execute(query_get_user, [user_id])
             current_user_object = cur.fetchone()
 
             if not current_user_object:

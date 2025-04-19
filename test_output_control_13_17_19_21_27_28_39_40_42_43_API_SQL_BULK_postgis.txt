@@ -1,0 +1,60 @@
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-04-19 18:54:25.277541
+
+Ending test at 2025-04-19 18:54:25.277557
+Data analysis test duration: 0:00:00.000016
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-04-19 18:54:25.279875
+
+Ending SIGPAC_17_Garraf.geojson test at 2025-04-19 18:54:49.512299
+0 features created (0 properties created)
+Creation test duration: 0:00:24.232424
+
+Ending SIGPAC_39_VallAran.geojson test at 2025-04-19 18:55:29.899199
+0 features created (0 properties created)
+Creation test duration: 0:01:04.619324
+
+Ending FeaturePoligon.geojson test at 2025-04-19 18:55:30.029248
+0 features created (0 properties created)
+Creation test duration: 0:01:04.749373
+
+Ending SIGPAC_28_PlaEstany.geojson test at 2025-04-19 18:56:16.855072
+0 features created (0 properties created)
+Creation test duration: 0:01:51.575197
+
+Ending SIGPAC_27_PlaUrgell.geojson test at 2025-04-19 18:57:13.223716
+0 features created (0 properties created)
+Creation test duration: 0:02:47.943841
+
+Ending SIGPAC_43_Llucanes.geojson test at 2025-04-19 18:57:45.464786
+0 features created (0 properties created)
+Creation test duration: 0:03:20.184911
+
+Ending SIGPAC_19_Garrotxa.geojson test at 2025-04-19 18:58:56.409972
+0 features created (0 properties created)
+Creation test duration: 0:04:31.130097
+
+Ending SIGPAC_40_VallesOccidental.geojson test at 2025-04-19 19:00:04.869834
+0 features created (0 properties created)
+Creation test duration: 0:05:39.589959
+
+Ending SIGPAC_21_Maresme.geojson test at 2025-04-19 19:01:23.349102
+0 features created (0 properties created)
+Creation test duration: 0:06:58.069227
+
+Ending SIGPAC_13_Barcelones.geojson test at 2025-04-19 19:01:31.895574
+0 features created (0 properties created)
+Creation test duration: 0:07:06.615699
+
+Ending SIGPAC_42_Moianes.geojson test at 2025-04-19 19:02:13.880012
+0 features created (0 properties created)
+Creation test duration: 0:07:48.600137
+

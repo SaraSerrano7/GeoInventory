@@ -21,8 +21,8 @@ class SimpleTest(TestCase):
     Class for future app tests
     """
     # TODO rememeber to also be executing server app
-    upload_endpoint = "http://localhost:8000/api/upload/"
-    # upload_endpoint = "http://geoinventory.irtav7.cat/api/upload/"
+    # upload_endpoint = "http://localhost:8000/api/upload/"
+    upload_endpoint = "http://geoinventory.irtav7.cat/api/upload/"
     start_time = None
     sample_folder = "Files/sample_geojson"
     test_folder = "Files/test_data"
@@ -191,11 +191,17 @@ class SimpleTest(TestCase):
                                                        content_type="application/json"),
                 }
 
-                self.client.login(username="creatorUser", password="jamon")
+                # self.client.login(username="creatorUser", password="jamon")
 
-                response = self.client.post(
+                # response = self.client.post(
+                #     self.upload_endpoint,
+                #     data={**form_data, **files_data})
+
+                response = requests.post(
                     self.upload_endpoint,
-                    data={**form_data, **files_data})
+                    data=form_data,
+                    files={"geojson_file": (filename, geojson_content, "application/json")},
+                )
 
                 # print(response.content)
 
