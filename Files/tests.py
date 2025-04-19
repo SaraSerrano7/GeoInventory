@@ -5,6 +5,7 @@ import json
 import os
 from datetime import datetime
 
+import requests
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
@@ -55,14 +56,6 @@ class SimpleTest(TestCase):
             })
             user_id = cur.fetchone()[0]
 
-            # user = User.objects.create_user(
-            #     username="creatorUser",
-            #     email="creatorUser@example.com",
-            #     password="jamon",
-            #     is_superuser=False,
-            #     is_staff=False
-            # )
-
             cls.user = user_id
 
             query_create_role = """
@@ -80,11 +73,6 @@ class SimpleTest(TestCase):
                 'creator_id': user_id,
             })
             role_id = cur.fetchone()[0]
-
-        # role = Role.objects.create(
-        #     role_name="creator",
-        #     creator=user,
-        # )
 
             cls.role = role_id
 
@@ -106,20 +94,11 @@ class SimpleTest(TestCase):
             team_id = team[0]
             team_name = team[1]
 
-        # team = Team.objects.create(
-        #     name="team_patata",
-        # )
 
             cls.team = team_id
             cls.team_name = team_name
 
-        # membership = Membership.objects.create(
-        #     member=user,
-        #     user_role=role,
-        #     user_team=team
-        # )
-        #
-        # cls.membership = membership
+
 
             query_create_membership = """
                 WITH digital_resource AS (
@@ -180,18 +159,6 @@ class SimpleTest(TestCase):
             assignation_id = cur.fetchone()[0]
             cls.assignation = assignation_id
 
-        # project = Project.objects.create(
-        #     name="proyecto_cultivos_herbaceos",
-        # )
-        #
-        # cls.project = project
-        #
-        # assignation = Assignations.objects.create(
-        #     assignated_project=project,
-        #     assignated_team=team,
-        # )
-        #
-        # cls.assignation = assignation
 
     def test_sample_creation(self):
         files = [f for f in os.listdir(self.test_folder) if f.endswith(".geojson")]

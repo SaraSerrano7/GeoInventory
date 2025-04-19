@@ -7,6 +7,7 @@ import json
 import requests
 # Create your views here.
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import Polygon
@@ -145,7 +146,8 @@ def get_categories(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@login_required
+# @login_required
+@csrf_exempt
 @require_http_methods(["POST"])
 @transaction.atomic
 def upload_file(request):
@@ -449,80 +451,145 @@ def sql_queries(request_user_id, content_type_id, file_name, teams_list,
                     })
 
             # 8. Crear GeoJSON Features y sus propiedades
-            def create_feature(geojson_file_id, feature_data):
-                # Extraer la geometría
-                geometry = feature_data['geometry']
-                geometry_type = geometry["type"]
-                # Convierte la geometría a WKT, suponiendo que usas la librería shapely
-                from shapely.geometry import shape
-                feature_shape = shape(geometry)
-                wkt = feature_shape.wkt
+            # def create_feature(geojson_file_id, feature_data):
+            #     # Extraer la geometría
+            #     geometry = feature_data['geometry']
+            #     geometry_type = geometry["type"]
+            #     # Convierte la geometría a WKT, suponiendo que usas la librería shapely
+            #     from shapely.geometry import shape
+            #     feature_shape = shape(geometry)
+            #     wkt = feature_shape.wkt
+            #
+            #     # Crear la feature
+            #     query_create_feature = """
+            #         INSERT INTO public."Files_geojsonfeature" (file_id, feature_type, geometry)
+            #         VALUES (%(file_id)s, %(feature_type)s, ST_GeomFromText(%(wkt)s))
+            #         RETURNING id;
+            #         """
+            #     cur.execute(query_create_feature, {
+            #         'file_id': geojson_file_id,
+            #         'feature_type': geometry_type,
+            #         'wkt': wkt
+            #     })
+            #     geojsonfeature = cur.fetchone()
+            #     geojsonfeature_id = geojsonfeature[0]
+            #
+            #     # Insertar las propiedades (cada par clave-valor)
+            #     properties = feature_data.get('properties', {})
+            #     for key, value in properties.items():
+            #         # Determinar el tipo de atributo; en este ejemplo simplemente se usa el nombre del tipo devuelto por type()
+            #         attribute_type = type(value).__name__
+            #         query_create_attribute = """
+            #             INSERT INTO public."Files_propertyattribute" (attribute_name, attribute_type)
+            #             VALUES (%(attribute_name)s, %(attribute_type)s)
+            #             RETURNING id;
+            #             """
+            #         cur.execute(query_create_attribute, {
+            #             'attribute_name': key,
+            #             'attribute_type': attribute_type
+            #         })
+            #         property_attribute = cur.fetchone()
+            #         property_attribute_id = property_attribute[0]
+            #
+            #         query_create_feature_property = """
+            #             INSERT INTO public."Files_geojsonfeatureproperties" (feature_id, attribute_id, attribute_value)
+            #             VALUES (%(feature_id)s, %(attribute_id)s, %(attribute_value)s);
+            #             """
+            #         cur.execute(query_create_feature_property, {
+            #             'feature_id': geojsonfeature_id,
+            #             'attribute_id': property_attribute_id,
+            #             'attribute_value': value
+            #         })
 
-                # Crear la feature
-                query_create_feature = """
-                    INSERT INTO public."Files_geojsonfeature" (file_id, feature_type, geometry)
-                    VALUES (%(file_id)s, %(feature_type)s, ST_GeomFromText(%(wkt)s))
-                    RETURNING id;
-                    """
-                cur.execute(query_create_feature, {
-                    'file_id': geojson_file_id,
-                    'feature_type': geometry_type,
-                    'wkt': wkt
-                })
-                geojsonfeature = cur.fetchone()
-                geojsonfeature_id = geojsonfeature[0]
-
-                # Insertar las propiedades (cada par clave-valor)
-                properties = feature_data.get('properties', {})
-                for key, value in properties.items():
-                    # Determinar el tipo de atributo; en este ejemplo simplemente se usa el nombre del tipo devuelto por type()
-                    attribute_type = type(value).__name__
-                    query_create_attribute = """
-                        INSERT INTO public."Files_propertyattribute" (attribute_name, attribute_type)
-                        VALUES (%(attribute_name)s, %(attribute_type)s)
-                        RETURNING id;
-                        """
-                    cur.execute(query_create_attribute, {
-                        'attribute_name': key,
-                        'attribute_type': attribute_type
-                    })
-                    property_attribute = cur.fetchone()
-                    property_attribute_id = property_attribute[0]
-
-                    query_create_feature_property = """
-                        INSERT INTO public."Files_geojsonfeatureproperties" (feature_id, attribute_id, attribute_value)
-                        VALUES (%(feature_id)s, %(attribute_id)s, %(attribute_value)s);
-                        """
-                    cur.execute(query_create_feature_property, {
-                        'feature_id': geojsonfeature_id,
-                        'attribute_id': property_attribute_id,
-                        'attribute_value': value
-                    })
+            # sustituimos los bucles por bulk_create
+            bulk_insert_features_and_properties(cur, geojson_file_id, geojson_data)
 
             # Llamar a create_feature en función del content_type y geojson_data recibido
-            if content_type == 'Feature':
-                create_feature(geojson_file_id, geojson_data)
-            else:
-                # Para cada feature en geojson_data['features']
-                for feature in geojson_data.get('features', []):
-                    create_feature(geojson_file_id, feature)
+            # if content_type == 'Feature':
+            #     create_feature(geojson_file_id, geojson_data)
+            # else:
+            #     # Para cada feature en geojson_data['features']
+            #     for feature in geojson_data.get('features', []):
+            #         create_feature(geojson_file_id, feature)
 
-        # Si todo fue exitoso, se confirma la transacción
-        # conn.commit()
         print("Operación completada exitosamente.")
 
     except Exception as e:
-        # En caso de error, se revierte la transacción
-        # if conn:
-        #     conn.rollback()
         print(f"Error: {e}")
 
     finally:
-        # Cerrar cursor y conexión
         if cur:
             cur.close()
-        # if conn:
-        #     conn.close()
+
+
+def bulk_insert_features_and_properties(cur, geojson_file_id, geojson_data):
+    from psycopg2.extras import execute_values
+    features = []
+    if geojson_data.get('type') == 'Feature':
+        features = [geojson_data]
+    else:
+        features = geojson_data.get('features', [])
+
+    feature_rows = []
+    feature_shapes = []
+    for feature in features:
+        geometry = feature['geometry']
+        geometry_type = geometry['type']
+        feature_shape = shape(geometry)
+        wkt = feature_shape.wkt
+        feature_rows.append((geojson_file_id, geometry_type, wkt))
+        feature_shapes.append((feature, wkt))  # Guardamos feature original + wkt para luego
+
+    # Insertar todas las features
+    feature_query = """
+        INSERT INTO public."Files_geojsonfeature" (file_id, feature_type, geometry)
+        VALUES %s
+        RETURNING id;
+    """
+
+    feature_ids = execute_values(cur, feature_query, feature_rows, fetch=True)
+
+    # execute_values(cur, feature_query, feature_rows)
+    # feature_ids = [row[0] for row in cur.fetchall()]
+
+    # Paso 2: recolectar todos los atributos únicos
+    attributes_dict = {}  # key: (name, type) → id
+    attribute_rows = []
+    for feature, _ in feature_shapes:
+        for key, value in feature.get('properties', {}).items():
+            attr_type = type(value).__name__
+            key_type = (key, attr_type)
+            if key_type not in attributes_dict:
+                attributes_dict[key_type] = None  # Placeholder
+                attribute_rows.append((key, attr_type))
+
+    # Insertar atributos únicos
+    attribute_query = """
+        INSERT INTO public."Files_propertyattribute" (attribute_name, attribute_type)
+        VALUES %s
+        RETURNING id, attribute_name, attribute_type;
+    """
+    execute_values(cur, attribute_query, attribute_rows)
+    for attr_id, name, typ in cur.fetchall():
+        attributes_dict[(name, typ)] = attr_id
+
+    # Paso 3: relaciones feature ↔ atributo
+    feature_property_rows = []
+    for (feature, _), feature_id in zip(feature_shapes, feature_ids):
+        for key, value in feature.get('properties', {}).items():
+            attr_type = type(value).__name__
+            attr_id = attributes_dict[(key, attr_type)]
+            feature_property_rows.append((feature_id, attr_id, value))
+
+    # Insertar todas las relaciones
+    feature_prop_query = """
+        INSERT INTO public."Files_geojsonfeatureproperties" (feature_id, attribute_id, attribute_value)
+        VALUES %s;
+    """
+    execute_values(cur, feature_prop_query, feature_property_rows)
+
+    return feature_ids
+
 
 
 def create_featureX(geojson_file, geojson_data):

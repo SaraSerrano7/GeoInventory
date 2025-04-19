@@ -1,0 +1,71 @@
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-04-19 17:55:28.931701
+
+Ending test at 2025-04-19 17:55:28.931716
+Data analysis test duration: 0:00:00.000015
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-04-19 17:55:28.933960
+
+Operación completada exitosamente.
+Ending SIGPAC_17_Garraf.geojson test at 2025-04-19 17:55:45.818628
+15651 features created (391275 properties created)
+Creation test duration: 0:00:16.884668
+
+Operación completada exitosamente.
+Ending SIGPAC_39_VallAran.geojson test at 2025-04-19 17:56:12.411386
+42202 features created (1055050 properties created)
+Creation test duration: 0:00:43.477426
+
+Operación completada exitosamente.
+Ending FeaturePoligon.geojson test at 2025-04-19 17:56:12.636028
+42203 features created (1055052 properties created)
+Creation test duration: 0:00:43.702068
+
+Operación completada exitosamente.
+Ending SIGPAC_28_PlaEstany.geojson test at 2025-04-19 17:56:47.481654
+75305 features created (1882602 properties created)
+Creation test duration: 0:01:18.547694
+
+Operación completada exitosamente.
+Ending SIGPAC_27_PlaUrgell.geojson test at 2025-04-19 17:57:42.949911
+127476 features created (3186877 properties created)
+Creation test duration: 0:02:14.015951
+
+Operación completada exitosamente.
+Ending SIGPAC_43_Llucanes.geojson test at 2025-04-19 17:58:11.153162
+149313 features created (3732802 properties created)
+Creation test duration: 0:02:42.219202
+
+Operación completada exitosamente.
+Ending SIGPAC_19_Garrotxa.geojson test at 2025-04-19 17:59:10.728134
+197309 features created (4932702 properties created)
+Creation test duration: 0:03:41.794174
+
+Operación completada exitosamente.
+Ending SIGPAC_40_VallesOccidental.geojson test at 2025-04-19 18:00:07.122638
+242603 features created (6065052 properties created)
+Creation test duration: 0:04:38.188678
+
+Operación completada exitosamente.
+Ending SIGPAC_21_Maresme.geojson test at 2025-04-19 18:01:07.996540
+295589 features created (7389702 properties created)
+Creation test duration: 0:05:39.062580
+
+Operación completada exitosamente.
+Ending SIGPAC_13_Barcelones.geojson test at 2025-04-19 18:01:14.436474
+300093 features created (7502302 properties created)
+Creation test duration: 0:05:45.502514
+
+Operación completada exitosamente.
+Ending SIGPAC_42_Moianes.geojson test at 2025-04-19 18:01:48.480542
+325779 features created (8144452 properties created)
+Creation test duration: 0:06:19.546582
+
