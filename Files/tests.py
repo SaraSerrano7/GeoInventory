@@ -18,8 +18,8 @@ class SimpleTest(TestCase):
     Class for future app tests
     """
     # TODO rememeber to also be executing server app
-    # upload_endpoint = "http://localhost:8000/api/upload/"
-    upload_endpoint = "http://geoinventory.irtav7.cat/api/upload/"
+    upload_endpoint = "http://localhost:8000/api/upload/"
+    # upload_endpoint = "http://geoinventory.irtav7.cat/api/upload/"
     start_time = None
     sample_folder = "Files/sample_geojson"
     test_folder = "Files/test_data"

@@ -7,6 +7,7 @@ import json
 import requests
 # Create your views here.
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import Polygon
@@ -144,7 +145,8 @@ def get_categories(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@login_required
+# @login_required
+@csrf_exempt
 @require_http_methods(["POST"])
 @transaction.atomic
 def upload_file(request):
@@ -168,7 +170,8 @@ def upload_file(request):
         # Create GeoJSONFile
         content_type = geojson_data['type']
         content_type_id = GEOJSON_TYPE_CHOICES.index((content_type, content_type))
-        current_user_object = User.objects.get(pk=request.user.id)
+        user_id = request.user.id if request.user.id else 1
+        current_user_object = User.objects.get(pk=user_id)
         geojson_file = GeoJSON.objects.create(
             creator=current_user_object,
             content_type=content_type_id,
