@@ -1,0 +1,28 @@
+This version of djongo does not support "NULL, NOT NULL column validation check" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "column type validation" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using NULL" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using CONSTRAINT" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using KEY" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using REFERENCES" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "COLUMN DROP NOT NULL " fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "DROP CASCADE" fully. Visit https://nesdis.github.io/djongo/support/
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-04-20 14:33:48.215697
+
+Ending test at 2025-04-20 14:33:48.215709
+Data analysis test duration: 0:00:00.000012
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-04-20 14:33:48.510551
+
+Ending FeaturePoligon.geojson test at 2025-04-20 14:33:48.710244
+0 features created (0 properties created)
+Creation test duration: 0:00:00.199693
+
