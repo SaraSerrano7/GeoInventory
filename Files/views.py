@@ -1,7 +1,7 @@
 """
 Files' app views to develop file management functions
 """
-
+import datetime
 import json
 from pymongo import MongoClient
 from bson import ObjectId
@@ -18,6 +18,7 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
+from pymongo.errors import BulkWriteError
 from shapely.geometry import shape
 
 from Management.models import GlobalMembership, GlobalRole
@@ -273,9 +274,25 @@ def mongo_queries(user_id,
         # djongo_wrapper = connections['default']
         # mongo_client = djongo_wrapper.client
         # mongo_db = mongo_client[djongo_wrapper.settings_dict['NAME']]
+        current_user = mongo_db['auth_user'].find_one({'username': 'creatorUser'})
 
+        digital_resource_doc = {
+            "id": ObjectId(),
+            "creator": current_user,
+            "created_at": datetime.datetime.now(),
+        }
+
+        file_doc = {
+            "digitalresource_ptr_id": digital_resource_doc['id'],
+            "name": file_name
+        }
 
         geojson_doc = {
+            "file_ptr_id": file_doc['digitalresource_ptr_id'],
+            "content_type": content_type
+        }
+
+        geojson_docX = {
             "creator_id": user_id,
             "content_type": content_type,
             "name": file_name
@@ -298,7 +315,14 @@ def mongo_queries(user_id,
 
         # Guardar ubicación
         if file_location == file_project:
+            digitalresource_result = mongo_db['Files_digitalresource'].insert_one({
+                "id": ObjectId(),
+                "creator_id": user_id,
+                "created_at": datetime.datetime.now(),
+            })
+
             mongo_db['Files_location'].insert_one({
+                "digitalresource_ptr_id": digitalresource_result.inserted_id,
                 "located_folder_id": None,
                 "located_project_id": project["_id"],
                 "located_file_id": geojson_id
@@ -338,14 +362,26 @@ def mongo_queries(user_id,
         # Guardar features y propiedades
         features = geojson_data["features"] if content_type == "FeatureCollection" else [geojson_data]
         feature_docs = []
-        property_docs = []
+
 
         for feature in features:
-            geometry = feature["geometry"]
+            property_docs = []
+            attributes_docs = []
+
+            # geometry = feature["geometry"]
+            geometry = json.loads(json.dumps(feature["geometry"]))
             geometry_type = geometry["type"]
             coordinates = geometry["coordinates"]
 
+            digitalresource_result = mongo_db['Files_digitalresource'].insert_one({
+                "id": ObjectId(),
+                "creator_id": user_id,
+                "created_at": datetime.datetime.now(),
+            })
+
             feature_doc = {
+                # "digitalresource_ptr_id": digitalresource_result.inserted_id,
+                "id": ObjectId(),
                 "file_id": geojson_id,
                 "feature_type": geometry_type,
                 "geometry": geometry
@@ -361,21 +397,52 @@ def mongo_queries(user_id,
                 except Exception:
                     parsed_type = "str"
 
-                prop_doc = {
-                    "feature_id": feature_id,
+                attr_doc = {
+                    "_id": ObjectId(),
+                    "id": ObjectId(),
                     "attribute_name": key,
                     "attribute_type": parsed_type,
+                }
+                attributes_docs.append(attr_doc)
+
+                # attributes_result = mongo_db['File_geojsonfeatureproperties'].insert_one(attr_doc)
+
+
+                prop_doc = {
+                    "_id": ObjectId(),
+                    "id": ObjectId(),
+                    "feature_id": feature_id,
+                    # "attribute_id": attributes_result.inserted_id,
                     "attribute_value": value
                 }
                 property_docs.append(prop_doc)
 
-            if property_docs:
-                mongo_db['Files_geojsonfeatureproperties'].insert_many(property_docs, ordered=False)
+                # clean_docs = []
+                # for doc in property_docs:
+                #     # Mongo generará un _id nuevo, y luego usamos ese mismo valor como id
+                #     generated_oid = ObjectId()
+                #     doc['_id'] = generated_oid
+                #     doc['id'] = generated_oid  # así no es null
+                #     clean_docs.append(doc)
 
-            return JsonResponse({'status': 'success'}, status=200)
+            if property_docs and attributes_docs:
+                attributes_result = mongo_db['File_propertyattribute'].insert_many(attributes_docs)
+                for index, id in enumerate(attributes_result.inserted_ids):
+                    property_docs[index]['attribute_id'] = id
+                properties_result = mongo_db['Files_geojsonfeatureproperties'].insert_many(property_docs)
+
+        return JsonResponse({'status': 'success'}, status=200)
 
     except json.JSONDecodeError as e:
         return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
+    except BulkWriteError as bwe:
+        for err in bwe.details['writeErrors']:
+            idx = err['index']
+            errmsg = err['errmsg']
+            dup_key = err.get('keyValue')  # {'feature_id': ObjectId(...)} u otro campo
+            print(f"Documento con índice {idx} en property_docs falló:")
+            print(f"  Mensaje: {errmsg}")
+            print(f"  Campo duplicado y valor: {dup_key}")
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
