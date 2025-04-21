@@ -3,7 +3,8 @@ Files' app views to develop file management functions
 """
 
 import json
-
+from pymongo import MongoClient
+from bson import ObjectId
 import requests
 # Create your views here.
 from django.contrib.auth.decorators import login_required
@@ -12,7 +13,7 @@ from django.contrib.auth.models import User
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.geos import Polygon
 from django.core.handlers.wsgi import WSGIRequest
-from django.db import connection
+from django.db import connection, connections
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
@@ -171,65 +172,75 @@ def upload_file(request):
         content_type = geojson_data['type']
         content_type_id = GEOJSON_TYPE_CHOICES.index((content_type, content_type))
         user_id = request.user.id if request.user.id else 1
-        current_user_object = User.objects.get(pk=user_id)
-        geojson_file = GeoJSON.objects.create(
-            creator=current_user_object,
-            content_type=content_type_id,
-            name=file_name
-        )
 
-        geojson_file_instance = File.objects.get(id=geojson_file.id)
+        mongo_queries(user_id=user_id,
+                      content_type=content_type,
+                      file_name=file_name,
+                      teams_list=teams_list,
+                      categories_list=categories_list,
+                      geojson_data=geojson_data,
+                      file_project=file_project,
+                      file_location=file_location)
+
+        # current_user_object = User.objects.get(pk=user_id)
+        # geojson_file = GeoJSON.objects.create(
+        #     creator=current_user_object,
+        #     content_type=content_type_id,
+        #     name=file_name
+        # )
+
+        # geojson_file_instance = File.objects.get(id=geojson_file.id)
 
         # Define file access
-        for team_name in teams_list:
-            team = Team.objects.get(name=team_name)
-            access = Access.objects.create(accessed_file=geojson_file_instance, accessing_team=team)
-
-        project = Project.objects.get(name=file_project)
-
-        # Locate Folder
-        if file_location == file_project:
-
-            location = Location.objects.create(
-                located_folder=None,
-                located_project=project,
-                located_file=geojson_file_instance
-            )
-        else:
-            folder = Folder.objects.filter(path=file_location)
-            if not folder.exists():
-                # si estamos aqui, la folder no es Project root
-                # pero puede tener parents
-                file_location_path = file_location.split('/')
-                if len(file_location_path) == 1 or (
-                        len(file_location_path) == 2 and file_location_path[0] == file_project):
-                    name = file_location_path[1] if len(file_location_path) == 2 else file_location_path[0]
-                    folder = Folder.objects.create(name=name, parent=None)
-                else:
-
-                    folder = build(file_location_path)
-            else:
-                folder = folder.first()
-            location = Location.objects.create(
-                located_folder=folder,
-                located_project=project,
-                located_file=geojson_file_instance
-            )
-
-        # Classify file
-        if categories_list:
-            for category_name in categories_list:
-                category = Category.objects.get(label=category_name)
-                classification = Classification.objects.create(related_file=geojson_file, category_name=category)
-
-        # Add each geojson feature
-        if content_type == 'Feature':
-            create_feature(geojson_file, geojson_data)
-
-        else:
-            for feature in geojson_data['features']:
-                create_feature(geojson_file, feature)
-                pass
+        # for team_name in teams_list:
+        #     team = Team.objects.get(name=team_name)
+        #     access = Access.objects.create(accessed_file=geojson_file_instance, accessing_team=team)
+        #
+        # project = Project.objects.get(name=file_project)
+        #
+        # # Locate Folder
+        # if file_location == file_project:
+        #
+        #     location = Location.objects.create(
+        #         located_folder=None,
+        #         located_project=project,
+        #         located_file=geojson_file_instance
+        #     )
+        # else:
+        #     folder = Folder.objects.filter(path=file_location)
+        #     if not folder.exists():
+        #         # si estamos aqui, la folder no es Project root
+        #         # pero puede tener parents
+        #         file_location_path = file_location.split('/')
+        #         if len(file_location_path) == 1 or (
+        #                 len(file_location_path) == 2 and file_location_path[0] == file_project):
+        #             name = file_location_path[1] if len(file_location_path) == 2 else file_location_path[0]
+        #             folder = Folder.objects.create(name=name, parent=None)
+        #         else:
+        #
+        #             folder = build(file_location_path)
+        #     else:
+        #         folder = folder.first()
+        #     location = Location.objects.create(
+        #         located_folder=folder,
+        #         located_project=project,
+        #         located_file=geojson_file_instance
+        #     )
+        #
+        # # Classify file
+        # if categories_list:
+        #     for category_name in categories_list:
+        #         category = Category.objects.get(label=category_name)
+        #         classification = Classification.objects.create(related_file=geojson_file, category_name=category)
+        #
+        # # Add each geojson feature
+        # if content_type == 'Feature':
+        #     create_feature(geojson_file, geojson_data)
+        #
+        # else:
+        #     for feature in geojson_data['features']:
+        #         create_feature(geojson_file, feature)
+        #         pass
 
         return JsonResponse({'status': 'success'}, status=200)
     except json.JSONDecodeError as e:
@@ -243,6 +254,130 @@ def upload_file(request):
             'message': str(e)
         }, status=500)
 
+
+def mongo_queries(user_id,
+                  content_type,
+                  file_name,
+                  teams_list,
+                  file_project,
+                  file_location,
+                  categories_list,
+                  geojson_data):
+    try:
+        # mongo_client = MongoClient("mongodb://localhost:27017/")
+        # db_name = settings.DATABASES['default']['NAME']
+        # mongo_db = mongo_client[db_name]
+
+        mongo_db = MongoClient('mongodb://localhost:27017/')['test_geoinventory']
+
+        # djongo_wrapper = connections['default']
+        # mongo_client = djongo_wrapper.client
+        # mongo_db = mongo_client[djongo_wrapper.settings_dict['NAME']]
+
+
+        geojson_doc = {
+            "creator_id": user_id,
+            "content_type": content_type,
+            "name": file_name
+        }
+        geojson_result = mongo_db['Files_geojson'].insert_one(geojson_doc)
+        geojson_id = geojson_result.inserted_id
+        # Guardar equipos con acceso
+        for team_name in teams_list:
+            team = mongo_db['Files_team'].find_one({"name": team_name})
+            if team:
+                mongo_db.access.insert_one({
+                    "accessed_file_id": geojson_id,
+                    "accessing_team_id": team["_id"]
+                })
+
+        # Buscar proyecto
+        project = mongo_db['Files_project'].find_one({"name": file_project})
+        if not project:
+            return JsonResponse({"error": f"Proyecto '{file_project}' no encontrado"}, status=404)
+
+        # Guardar ubicación
+        if file_location == file_project:
+            mongo_db['Files_location'].insert_one({
+                "located_folder_id": None,
+                "located_project_id": project["_id"],
+                "located_file_id": geojson_id
+            })
+        else:
+            folder = mongo_db['Files_folder'].find_one({"path": file_location})
+            if not folder:
+                path_parts = file_location.split('/')
+                name = path_parts[-1]
+                parent_path = '/'.join(path_parts[:-1]) if len(path_parts) > 1 else None
+                parent_folder = mongo_db['Files_folder'].find_one({"path": parent_path}) if parent_path else None
+                folder_doc = {
+                    "name": name,
+                    "path": file_location,
+                    "parent_id": parent_folder["_id"] if parent_folder else None
+                }
+                folder_result = mongo_db['Files_folder'].insert_one(folder_doc)
+                folder_id = folder_result.inserted_id
+            else:
+                folder_id = folder["_id"]
+
+            mongo_db['Files_location'].insert_one({
+                "located_folder_id": folder_id,
+                "located_project_id": project["_id"],
+                "located_file_id": geojson_id
+            })
+
+        # Clasificación por categoría
+        for category_name in categories_list:
+            category = mongo_db['Files_category'].find_one({"label": category_name})
+            if category:
+                mongo_db['Files_classification'].insert_one({
+                    "related_file_id": geojson_id,
+                    "category_id": category["_id"]
+                })
+
+        # Guardar features y propiedades
+        features = geojson_data["features"] if content_type == "FeatureCollection" else [geojson_data]
+        feature_docs = []
+        property_docs = []
+
+        for feature in features:
+            geometry = feature["geometry"]
+            geometry_type = geometry["type"]
+            coordinates = geometry["coordinates"]
+
+            feature_doc = {
+                "file_id": geojson_id,
+                "feature_type": geometry_type,
+                "geometry": geometry
+            }
+            feature_result = mongo_db['Files_geojsonfeature'].insert_one(feature_doc)
+            feature_id = feature_result.inserted_id
+
+            # Propiedades
+            # TODO: fix. separar en propertyattributes
+            for key, value in feature.get("properties", {}).items():
+                try:
+                    parsed_type = type(json.loads(f'"{value}"')).__name__
+                except Exception:
+                    parsed_type = "str"
+
+                prop_doc = {
+                    "feature_id": feature_id,
+                    "attribute_name": key,
+                    "attribute_type": parsed_type,
+                    "attribute_value": value
+                }
+                property_docs.append(prop_doc)
+
+            if property_docs:
+                mongo_db['Files_geojsonfeatureproperties'].insert_many(property_docs, ordered=False)
+
+            return JsonResponse({'status': 'success'}, status=200)
+
+    except json.JSONDecodeError as e:
+        return JsonResponse({"error": "El contenido no es un JSON válido", "details": str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 def create_feature(geojson_file, geojson_data):
     geometry = geojson_data['geometry']

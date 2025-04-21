@@ -115,17 +115,17 @@ class SimpleTest(TestCase):
                                                        content_type="application/json"),
                 }
 
-                # self.client.login(username="creatorUser", password="jamon")
+                self.client.login(username="creatorUser", password="jamon")
 
-                # response = self.client.post(
-                #     self.upload_endpoint,
-                #     data={**form_data, **files_data})
-
-                response = requests.post(
+                response = self.client.post(
                     self.upload_endpoint,
-                    data=form_data,
-                    files={"geojson_file": (filename, geojson_content, "application/json")},
-                )
+                    data={**form_data, **files_data})
+
+                # response = requests.post(
+                #     self.upload_endpoint,
+                #     data=form_data,
+                #     files={"geojson_file": (filename, geojson_content, "application/json")},
+                # )
 
                 # print(response.content)
 
