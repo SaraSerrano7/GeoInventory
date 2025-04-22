@@ -1,0 +1,68 @@
+This version of djongo does not support "NULL, NOT NULL column validation check" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using CONSTRAINT" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using KEY" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using REFERENCES" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "column type validation" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using NULL" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "COLUMN DROP NOT NULL " fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "DROP CASCADE" fully. Visit https://nesdis.github.io/djongo/support/
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-04-22 10:52:16.597744
+
+Ending test at 2025-04-22 10:52:16.597780
+Data analysis test duration: 0:00:00.000036
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-04-22 10:52:17.203493
+
+Ending SIGPAC_17_Garraf.geojson test at 2025-04-22 10:53:10.600830
+0 features created (0 properties created)
+Creation test duration: 0:00:53.397337
+
+Ending SIGPAC_39_VallAran.geojson test at 2025-04-22 10:54:38.235036
+0 features created (0 properties created)
+Creation test duration: 0:02:21.031543
+
+Ending FeaturePoligon.geojson test at 2025-04-22 10:54:38.326733
+0 features created (0 properties created)
+Creation test duration: 0:02:21.123240
+
+Ending SIGPAC_28_PlaEstany.geojson test at 2025-04-22 10:56:31.321948
+0 features created (0 properties created)
+Creation test duration: 0:04:14.118455
+
+Ending SIGPAC_27_PlaUrgell.geojson test at 2025-04-22 10:59:12.019452
+0 features created (0 properties created)
+Creation test duration: 0:06:54.815959
+
+Ending SIGPAC_43_Llucanes.geojson test at 2025-04-22 11:00:29.241281
+0 features created (0 properties created)
+Creation test duration: 0:08:12.037788
+
+Ending SIGPAC_19_Garrotxa.geojson test at 2025-04-22 11:03:00.108716
+0 features created (0 properties created)
+Creation test duration: 0:10:42.905223
+
+Ending SIGPAC_40_VallesOccidental.geojson test at 2025-04-22 11:03:52.830936
+0 features created (0 properties created)
+Creation test duration: 0:11:35.627443
+
+Ending SIGPAC_21_Maresme.geojson test at 2025-04-22 11:04:46.199097
+0 features created (0 properties created)
+Creation test duration: 0:12:28.995604
+
+Ending SIGPAC_13_Barcelones.geojson test at 2025-04-22 11:05:19.760072
+0 features created (0 properties created)
+Creation test duration: 0:13:02.556579
+
+Ending SIGPAC_42_Moianes.geojson test at 2025-04-22 11:06:05.408830
+0 features created (0 properties created)
+Creation test duration: 0:13:48.205337
+

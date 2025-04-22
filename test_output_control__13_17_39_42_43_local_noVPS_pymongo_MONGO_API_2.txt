@@ -1,0 +1,48 @@
+This version of djongo does not support "NULL, NOT NULL column validation check" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using CONSTRAINT" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using KEY" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using REFERENCES" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "column type validation" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "schema validation using NULL" fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "COLUMN DROP NOT NULL " fully. Visit https://nesdis.github.io/djongo/support/
+This version of djongo does not support "DROP CASCADE" fully. Visit https://nesdis.github.io/djongo/support/
+System check identified no issues (0 silenced).
+
+
+----------------------------------------------
+Starting tests at 2025-04-22 08:27:08.295504
+
+Ending test at 2025-04-22 08:27:08.295539
+Data analysis test duration: 0:00:00.000035
+----------------------------------------------
+
+
+
+
+----------------------------------------------
+Starting tests at 2025-04-22 08:27:08.685391
+
+Ending SIGPAC_17_Garraf.geojson test at 2025-04-22 08:28:01.719790
+0 features created (0 properties created)
+Creation test duration: 0:00:53.034399
+
+Ending SIGPAC_39_VallAran.geojson test at 2025-04-22 08:29:31.958101
+0 features created (0 properties created)
+Creation test duration: 0:02:23.272710
+
+Ending FeaturePoligon.geojson test at 2025-04-22 08:29:32.048208
+0 features created (0 properties created)
+Creation test duration: 0:02:23.362817
+
+Ending SIGPAC_43_Llucanes.geojson test at 2025-04-22 08:30:45.630890
+0 features created (0 properties created)
+Creation test duration: 0:03:36.945499
+
+Ending SIGPAC_13_Barcelones.geojson test at 2025-04-22 08:30:59.308955
+0 features created (0 properties created)
+Creation test duration: 0:03:50.623564
+
+Ending SIGPAC_42_Moianes.geojson test at 2025-04-22 08:32:24.524779
+0 features created (0 properties created)
+Creation test duration: 0:05:15.839388
+
